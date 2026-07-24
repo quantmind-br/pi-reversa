@@ -1,0 +1,23 @@
+{
+  "skills": {
+    "tui-design": {
+      "computedHash": "2d23867ddda530eb134dfa8c4acf05bf206a8ff3d8e26b0122b15dccdd42217f",
+      "skillPath": "tui-design/SKILL.md",
+      "source": "/home/diogo/dev/skills",
+      "sourceType": "local"
+    },
+    "tui-refactor": {
+      "computedHash": "451343926b0aa55140106a09256ddfaf9f7ffba1ff01f0dd8a075d1faaccbd83",
+      "skillPath": "tui-refactor/SKILL.md",
+      "source": "/home/diogo/dev/skills",
+      "sourceType": "local"
+    },
+    "tui-validator": {
+      "computedHash": "30cf61cd505df8ec2f5d341e1560a81dd04170cee60ea2c6e70974949904e9e3",
+      "skillPath": "tui-validator/SKILL.md",
+      "source": "/home/diogo/dev/skills",
+      "sourceType": "local"
+    }
+  },
+  "version": 1
+}

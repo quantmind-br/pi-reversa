@@ -1,0 +1,6 @@
+# Local Pi runtime state
+.atl/
+node_modules/
+npm-debug.log*
+*.tgz
+packaged-skills/

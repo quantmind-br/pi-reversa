@@ -1,0 +1,42 @@
+{
+  "name": "pi-reversa",
+  "version": "0.1.0",
+  "description": "Pi Coding Agent integration for the Reversa reverse-engineering framework",
+  "type": "module",
+  "scripts": {
+    "prepare-skills": "node scripts/prepare-skills.js",
+    "test": "npm run prepare-skills && node --test",
+    "prepack": "npm run prepare-skills"
+  },
+  "keywords": [
+    "pi-package",
+    "pi-coding-agent",
+    "reversa",
+    "reverse-engineering",
+    "agent-skills"
+  ],
+  "license": "MIT",
+  "pi": {
+    "extensions": [
+      "./extensions/reversa.js"
+    ],
+    "skills": [
+      "./packaged-skills"
+    ]
+  },
+  "files": [
+    "extensions/",
+    "packaged-skills/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "dependencies": {
+    "reversa": "1.2.56"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}
