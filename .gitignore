@@ -4,3 +4,5 @@ node_modules/
 npm-debug.log*
 *.tgz
 packaged-skills/
+.reversa/cache/
+.reversa/context/codebase-memory/

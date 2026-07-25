@@ -263,7 +263,7 @@ function discoverySkillIndex(dir) {
   );
 }
 
-test('runPipeline runs discovery in order, fans out, and survives a failing stage', async () => {
+test('runPipeline runs discovery in order, fans out modules/units, and stops on required failure', async () => {
   await withTempDir(async (dir) => {
     mkdirSync(join(dir, '.reversa', 'context'), { recursive: true });
     writeFileSync(
@@ -287,10 +287,11 @@ test('runPipeline runs discovery in order, fans out, and survives a failing stag
 
     const done = result.stages.filter((stage) => stage.status === 'done').map((stage) => stage.id);
     assert.deepEqual(done.slice(0, 4), ['scout', 'archaeologist:auth', 'archaeologist:orders', 'archaeologist:billing']);
-    // The pipeline continued past the failure instead of stopping.
-    assert.ok(done.includes('writer'), 'writer must still run after detective failed');
+    // Required detective failure must block writer and mark pipeline failed.
+    assert.ok(!done.some((id) => id === 'writer' || id.startsWith('writer:')), 'writer must not run after detective failed');
     assert.ok(result.warnings.some((warning) => /detective exploded/.test(warning)));
-    assert.equal(result.aborted, false);
+    assert.equal(result.aborted, true);
+    assert.equal(result.status, 'failed');
     assert.match(result.report, /Totais: ✅/);
 
     // Specs organization persisted after Scout, before Archaeologist.
@@ -428,6 +429,7 @@ test('runSubagent isolates the child session from the host agent', async () => {
   assert.deepEqual(sessionOptions.tools, SUBAGENT_TOOLS);
   assert.ok(sessionOptions.customTools.some((tool) => tool.name === 'write'));
   assert.ok(sessionOptions.customTools.some((tool) => tool.name === 'reversa_git'));
+  assert.ok(sessionOptions.customTools.some((tool) => tool.name === 'reversa_code_intel'));
 
   assert.equal(result.text, 'ok');
   assert.equal(result.usage.total, 3);

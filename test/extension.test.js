@@ -95,7 +95,7 @@ test('registers only Reversa skill aliases with descriptions', async () => {
     extension(harness.pi);
     await harness.handlers.get('session_start')({ reason: 'startup' }, {});
 
-    assert.deepEqual([...harness.registered.keys()], ['reversa', 'reversa-forward', 'reversa-auto']);
+    assert.deepEqual([...harness.registered.keys()].filter((name) => name !== 'reversa-cbm'), ['reversa', 'reversa-forward', 'reversa-auto']);
     assert.equal(harness.registered.get('reversa').description, 'Main orchestrator');
     assert.equal(harness.registered.get('reversa-forward').description, 'Forward orchestrator');
   } finally {
@@ -197,7 +197,7 @@ test('reports missing skill files', async () => {
 
   await harness.handlers.get('session_start')({ reason: 'startup' }, {});
 
-  assert.deepEqual([...harness.registered.keys()], ['reversa', 'reversa-auto']);
+  assert.deepEqual([...harness.registered.keys()].filter((name) => name !== 'reversa-cbm'), ['reversa', 'reversa-auto']);
 
   const notifications = [];
   await harness.registered.get('reversa').handler('', {
@@ -235,7 +235,7 @@ test('warns once for foreign alias conflicts and stays silent for own reloads', 
   await harness.handlers.get('session_start')({ reason: 'startup' }, ctx);
   await harness.handlers.get('session_start')({ reason: 'reload' }, ctx);
 
-  assert.deepEqual([...harness.registered.keys()], ['reversa', 'reversa-auto']);
+  assert.deepEqual([...harness.registered.keys()].filter((name) => name !== 'reversa-cbm'), ['reversa', 'reversa-auto']);
   assert.equal(notifications.length, 1);
   assert.equal(notifications[0][1], 'warning');
   assert.equal(
@@ -251,7 +251,12 @@ test('registers reversa_orchestrate at load, before any session_start', async ()
 
   const tool = harness.tools.get('reversa_orchestrate');
   assert.ok(tool, 'tool must exist before session_start runs');
-  assert.equal(harness.registered.size, 0, 'no commands are registered before session_start');
+  // Factory-time utility commands such as /reversa-cbm may exist before session_start.
+  assert.deepEqual(
+    [...harness.registered.keys()].filter((name) => !['reversa-cbm'].includes(name)),
+    [],
+    'skill aliases must not register before session_start',
+  );
 
   const keys = Object.keys(tool.parameters.properties);
   for (const key of ['pipeline', 'doc_level', 'specs_choice', 'user_name', 'project']) {
@@ -270,7 +275,7 @@ test('isolation: no Reversa tool shadows a host delegation mechanism', async () 
   for (const forbidden of ['subagent', 'subagent_wait', 'agent', 'delegate', 'task', 'run']) {
     assert.equal(harness.tools.has(forbidden), false, `must not register a tool named ${forbidden}`);
   }
-  assert.deepEqual([...harness.tools.keys()], ['reversa_orchestrate']);
+  assert.deepEqual([...harness.tools.keys()].sort(), ['reversa_code_intel', 'reversa_orchestrate']);
 });
 
 test('/reversa-auto prompts for ask_user_question when the tool is present', async () => {

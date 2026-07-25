@@ -1,6 +1,6 @@
 {
   "name": "pi-reversa",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pi Coding Agent integration for the Reversa reverse-engineering framework",
   "type": "module",
   "scripts": {
@@ -34,6 +34,7 @@
     "node": ">=22.19.0"
   },
   "dependencies": {
+    "codebase-memory-mcp": "0.9.0",
     "reversa": "file:../reversa/reversa-1.2.57.tgz"
   },
   "peerDependencies": {

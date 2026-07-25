@@ -1,4 +1,5 @@
 import { createGitReadTool, createGuardedFileTools } from "./guarded-tools.js";
+import { createCodeIntelTool } from "./code-intel-tool.js";
 
 /**
  * Tools a Reversa subagent may use.
@@ -7,8 +8,20 @@ import { createGitReadTool, createGuardedFileTools } from "./guarded-tools.js";
  * archaeology goes through `reversa_git` instead. No host delegation tool
  * (`subagent`, `subagent_wait`, …) appears here, and `noExtensions` below means
  * none can be loaded either.
+ *
+ * `reversa_code_intel` is package-owned and optional at runtime: if the binary
+ * / index is unavailable the tool itself returns a structured fallback.
  */
-export const SUBAGENT_TOOLS = ["read", "grep", "find", "ls", "edit", "write", "reversa_git"];
+export const SUBAGENT_TOOLS = [
+  "read",
+  "grep",
+  "find",
+  "ls",
+  "edit",
+  "write",
+  "reversa_git",
+  "reversa_code_intel",
+];
 
 /**
  * Lazily import the Pi SDK. Inside Pi, the extension loader aliases this
@@ -36,11 +49,12 @@ async function loadSdk() {
  * @param {string[]} options.allowedRoots
  * @param {AbortSignal} [options.signal]
  * @param {(event: { type: string, name?: string }) => void} [options.onEvent]
+ * @param {any} [options.codeIntelSession]
  * @param {object} [deps] injection seam for tests
- * @returns {Promise<{ text: string, stopReason: string, errorMessage?: string, usage: any, cost: number, messageCount: number }>}
+ * @returns {Promise<{ text: string, stopReason: string, errorMessage?: string, usage: any, cost: number, messageCount: number, violations?: any[] }>}
  */
 export async function runSubagent(
-  { cwd, task, model, thinkingLevel, allowedRoots, signal, onEvent },
+  { cwd, task, model, thinkingLevel, allowedRoots, signal, onEvent, codeIntelSession },
   deps = {},
 ) {
   const sdk = deps.sdk ?? (await loadSdk());
@@ -62,6 +76,9 @@ export async function runSubagent(
   await loader.reload();
 
   const fileTools = createGuardedFileTools(cwd, allowedRoots);
+  const codeIntelTool = createCodeIntelTool({
+    getSession: async () => codeIntelSession ?? null,
+  });
 
   const { session } = await createAgentSession({
     cwd,
@@ -71,7 +88,7 @@ export async function runSubagent(
     settingsManager,
     sessionManager: SessionManager.inMemory(cwd),
     tools: SUBAGENT_TOOLS,
-    customTools: [...fileTools, createGitReadTool(cwd)],
+    customTools: [...fileTools, createGitReadTool(cwd), codeIntelTool],
   });
 
   const onAbort = () => void session.abort();

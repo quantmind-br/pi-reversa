@@ -29,11 +29,11 @@ test('extension source never reaches into host subagent machinery', () => {
   }
 });
 
-test('package declares no agents block and only the reversa dependency', () => {
+test('package declares no agents block and only allowed runtime dependencies', () => {
   const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
 
   assert.equal(pkg.pi.agents, undefined, 'pi.agents would expose Reversa agents to the host mechanism');
-  assert.deepEqual(Object.keys(pkg.dependencies), ['reversa']);
+  assert.deepEqual(Object.keys(pkg.dependencies).sort(), ['codebase-memory-mcp', 'reversa']);
   assert.deepEqual(Object.keys(pkg.peerDependencies), ['@earendil-works/pi-coding-agent']);
   assert.equal(pkg.dependencies['pi-subagents'], undefined);
 });

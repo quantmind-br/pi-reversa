@@ -1,12 +1,17 @@
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 import { createSandboxGuard, WriteOutsideSandboxError } from "./guarded-tools.js";
 import { PIPELINES } from "./pipelines.js";
 import {
   DEFAULT_OUTPUT_FOLDER,
   isSafeOutputFolder,
   listScoutModules,
-  outputFolder,
   readState,
   readSurface,
   resolveProjectLayout,
@@ -18,10 +23,17 @@ import {
   getPipelineWriteRoots,
   listRegressionWatchPaths,
 } from "reversa/paths/layout.js";
+import {
+  createCodeIntelSession,
+  ensureIndexedAndMaterialized,
+  statusSnapshot,
+  writeSessionEvents,
+} from "./code-intelligence/index.js";
 import { buildSkillBlock, stripFrontmatter } from "./skill-block.js";
 import { runSubagent as defaultRunSubagent } from "./subagent.js";
+import { ensureDocsVendors, smokeTestDocs } from "./docs-assets.js";
 
-/** Parallel Archaeologists. Modules write disjoint files, so this is safe. */
+/** Parallel Archaeologists / Writers. Modules/units write disjoint files. */
 export const DEFAULT_FANOUT_CONCURRENCY = 3;
 
 const REPORT_LIMIT = 12_000;
@@ -35,17 +47,11 @@ export const PIPELINE_EXTRA_ROOTS = {};
 /**
  * Sandbox roots subagents of `pipeline` may write to.
  *
- * Roots are workflow-specific:
- * - discovery → `.reversa` + folders.discovery
- * - migrate → `.reversa` + folders.migration
- * - docs → `.reversa` + folders.docs
- * - regression-check additionally receives only existing regression-watch.md files
- *
  * @param {string} cwd
- * @param {string | Record<string, any>} folderOrState output folder string or full state
+ * @param {string | Record<string, any>} folderOrState
  * @param {string} [pipeline]
  * @param {Record<string, any>} [state]
- * @returns {string[]} absolute paths
+ * @returns {string[]}
  */
 export function sandboxRoots(cwd, folderOrState, pipeline = "discovery", state) {
   const base = resolve(cwd);
@@ -57,12 +63,10 @@ export function sandboxRoots(cwd, folderOrState, pipeline = "discovery", state) 
         : { output_folder: folderOrState };
 
   const layout = resolveProjectLayout(sourceState, cwd);
-  // If a bare unsafe folder string was passed, force the default discovery path.
   if (typeof folderOrState === "string" && !isSafeOutputFolder(folderOrState)) {
     layout.folders.discovery = DEFAULT_OUTPUT_FOLDER;
     layout.output_folder = DEFAULT_OUTPUT_FOLDER;
   } else if (typeof folderOrState === "string" && isSafeOutputFolder(folderOrState) && !sourceState.folders) {
-    // Preserve explicit folder argument used by unit tests / direct callers.
     if (pipeline === "discovery") layout.folders.discovery = folderOrState.trim();
   }
 
@@ -77,8 +81,21 @@ export function sandboxRoots(cwd, folderOrState, pipeline = "discovery", state) 
     pipeline === "migrate" ? "migration" : pipeline,
   );
 
+  // Closed extra roots for Screen Translator / design-system tokens.
+  // Kept local to pi-reversa so we do not depend on upstream layout patches.
+  if (pipeline === "migrate" || pipeline === "migration") {
+    const migration = String(layout.folders.migration ?? ".specs/migration").replace(/\\/g, "/").replace(/\/$/, "");
+    const discovery = String(layout.folders.discovery ?? ".specs/discovery").replace(/\\/g, "/").replace(/\/$/, "");
+    const screens = migration.endsWith("/migration")
+      ? `${migration.slice(0, -"/migration".length)}/screens`
+      : migration === "migration"
+        ? "screens"
+        : ".specs/screens";
+    const designSystem = discovery.includes("/") ? `${discovery}/design-system` : ".specs/design-system";
+    names.push(screens, designSystem);
+  }
+
   if (pipeline === "regression-check") {
-    // Only existing regression-watch.md files under forward are writable, never the whole tree.
     names = names.filter((name) => name !== layout.forward_folder);
     names.push(...listRegressionWatchPaths(cwd, layout.forward_folder));
   }
@@ -87,8 +104,6 @@ export function sandboxRoots(cwd, folderOrState, pipeline = "discovery", state) 
 }
 
 /**
- * Does the project have at least one forward-cycle regression watch file?
- *
  * @param {string} cwd
  * @param {Record<string, any>} [state]
  */
@@ -98,37 +113,106 @@ export function hasRegressionWatch(cwd, state = {}) {
 }
 
 /**
- * Expand the declared stages into concrete runs, applying fan-out.
- *
+ * @param {string} cwd
+ * @param {Record<string, any>} state
+ * @returns {string[]}
+ */
+export function listWriterUnits(cwd, state = {}) {
+  const surface = readSurface(cwd) ?? {};
+  const specs = readSpecsChoice(cwd, state);
+  if (specs.granularity === "custom" && Array.isArray(specs.custom_folders) && specs.custom_folders.length > 0) {
+    return specs.custom_folders.map(slug).filter(Boolean);
+  }
+  const features = surface.organization_suggestion?.features ?? [];
+  if (Array.isArray(features) && features.length > 0) {
+    return features.map((entry) => (typeof entry === "string" ? entry : entry?.name)).map(slug).filter(Boolean);
+  }
+  return listScoutModules(surface).map(slug).filter(Boolean);
+}
+
+/**
+ * @param {string} cwd
+ * @param {Record<string, any>} state
+ */
+function readSpecsChoice(cwd, state) {
+  try {
+    const configPath = join(resolve(cwd), ".reversa", "config.toml");
+    if (!existsSync(configPath)) {
+      return {
+        granularity: state.specs_choice ?? "module",
+        custom_folders: state.custom_folders ?? [],
+      };
+    }
+    const raw = readFileSync(configPath, "utf8");
+    let granularity = state.specs_choice ?? "";
+    /** @type {string[]} */
+    let custom = Array.isArray(state.custom_folders) ? state.custom_folders : [];
+    let inSpecs = false;
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("[")) {
+        inSpecs = trimmed === "[specs]";
+        continue;
+      }
+      if (!inSpecs || !trimmed || trimmed.startsWith("#")) continue;
+      const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/);
+      if (!match) continue;
+      if (match[1] === "granularity") granularity = match[2].trim().replace(/^["']|["']$/g, "");
+      if (match[1] === "custom_folders") {
+        custom = [...match[2].matchAll(/"([^"]*)"|'([^']*)'/g)].map((entry) => entry[1] ?? entry[2]).filter(Boolean);
+      }
+    }
+    return { granularity: granularity || "module", custom_folders: custom };
+  } catch {
+    return { granularity: state.specs_choice ?? "module", custom_folders: state.custom_folders ?? [] };
+  }
+}
+
+/**
+ * @param {unknown} value
+ */
+function slug(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
  * @param {import("./pipelines.js").Stage[]} stages
  * @param {string[]} modules
- * @returns {{ stage: import("./pipelines.js").Stage, module: string | null, key: string }[]}
+ * @param {string[]} units
  */
-export function expandStages(stages, modules) {
+export function expandStages(stages, modules, units = []) {
   const expanded = [];
   for (const stage of stages) {
     if (stage.fanOut === "modules" && modules.length > 0) {
-      for (const module of modules) expanded.push({ stage, module, key: `${stage.id}:${module}` });
+      for (const module of modules) expanded.push({ stage, module, unit: null, key: `${stage.id}:${module}` });
+    } else if (stage.fanOut === "units" && units.length > 0) {
+      for (const unit of units) expanded.push({ stage, module: null, unit, key: `${stage.id}:${unit}` });
     } else {
-      expanded.push({ stage, module: null, key: stage.id });
+      expanded.push({ stage, module: null, unit: null, key: stage.id });
     }
   }
   return expanded;
 }
 
 /**
- * Build the full prompt for one stage. Pure string assembly — no model call.
- *
  * @param {object} input
- * @param {import("./pipelines.js").Stage} input.stage
- * @param {string | null} input.module
- * @param {Record<string, any>} input.state
- * @param {string} input.folder
- * @param {string[]} [input.writableRoots] root names advertised to the subagent
- * @param {string} [input.skillsDir]
  * @returns {string}
  */
-export function buildStageTask({ stage, module, skillEntry, state, folder, writableRoots, skillsDir }) {
+export function buildStageTask({
+  stage,
+  module,
+  unit,
+  skillEntry,
+  state,
+  folder,
+  writableRoots,
+  skillsDir,
+  codeIntelAvailable = false,
+}) {
   const sections = [];
 
   if (stage.skill && skillEntry) {
@@ -142,6 +226,16 @@ export function buildStageTask({ stage, module, skillEntry, state, folder, writa
     );
   }
 
+  const codeIntelLines = codeIntelAvailable
+    ? [
+        "- A ferramenta `reversa_code_intel` está disponível. Use-a para descoberta estrutural (architecture/symbols/traces).",
+        "- Trate resultados do grafo como descoberta. Confirme claims materiais com `read` no source atual.",
+        "- Claims negativas exigem fallback textual quando a cobertura for parcial/ausente.",
+      ]
+    : [
+        "- `reversa_code_intel` pode estar indisponível; use read/grep/find/ls e confirme tudo no source.",
+      ];
+
   sections.push(
     [
       "## Contexto da execução autônoma",
@@ -151,30 +245,33 @@ export function buildStageTask({ stage, module, skillEntry, state, folder, writa
       `- Pasta de saída: ${folder}`,
       `- answer_mode = file: NUNCA pergunte nada. Toda dúvida vai para ${folder}/questions.md com contexto e marcador 🔴 LACUNA na spec correspondente.`,
       "- Você não tem `bash`. Para histórico de git use a ferramenta `reversa_git`.",
+      ...codeIntelLines,
       `- Escreva APENAS em ${(writableRoots ?? [".reversa", folder]).map((root) => (root.endsWith(".md") ? root : `${root}/`)).join(", ")}. Escritas fora disso falham por design.`,
       "- Não peça CONTINUAR, não ofereça /clear, não sugira próximos passos interativos.",
       "- Ao terminar, responda com um resumo de no máximo 20 linhas: artefatos criados, contagens 🟢/🟡/🔴, e avisos.",
     ].join("\n"),
   );
 
-  const moduleLine = module ? `\nAnalise exclusivamente o módulo \`${module}\`.` : "";
-  sections.push(`## Tarefa\n${stage.task}${moduleLine}`);
+  const scopeLine = module
+    ? `\nAnalise exclusivamente o módulo \`${module}\`.`
+    : unit
+      ? `\nGere exclusivamente a unit \`${unit}\`${stage.args ? ` (args: ${stage.args})` : ""}.`
+      : stage.args
+        ? `\nArgs: ${stage.args}`
+        : "";
+  sections.push(`## Tarefa\n${stage.task}${scopeLine}`);
 
   return sections.join("\n\n");
 }
 
 /**
- * Run `tasks` with at most `limit` in flight.
- *
  * @template T
  * @param {Array<() => Promise<T>>} tasks
  * @param {number} limit
- * @returns {Promise<T[]>}
  */
 async function withConcurrency(tasks, limit) {
   const results = new Array(tasks.length);
   let cursor = 0;
-
   const workers = Array.from({ length: Math.max(1, Math.min(limit, tasks.length)) }, async () => {
     for (;;) {
       const index = cursor;
@@ -183,15 +280,11 @@ async function withConcurrency(tasks, limit) {
       results[index] = await tasks[index]();
     }
   });
-
   await Promise.all(workers);
   return results;
 }
 
 /**
- * Merge interview answers into the persisted state without clobbering values
- * the user already has on disk, unless the answer is explicit.
- *
  * @param {Record<string, any>} state
  * @param {Record<string, any>} answers
  */
@@ -206,22 +299,32 @@ export function mergeAnswers(state, answers) {
 }
 
 /**
- * Execute a whole Reversa pipeline. Never asks the user anything: the only
- * events that stop the loop are an abort and a sandbox violation.
+ * @param {Set<string>} succeededStageIds
+ * @param {import("./pipelines.js").Stage} stage
+ * @param {Array<{ id: string, status: string }>} stageResults
+ */
+function dependenciesSatisfied(succeededStageIds, stage, stageResults) {
+  const dependsOn = stage.dependsOn ?? [];
+  if (dependsOn.length === 0) return { ok: true };
+  for (const dep of dependsOn) {
+    if (succeededStageIds.has(dep)) continue;
+    const failedDep = stageResults.find((entry) => entry.id === dep || entry.id.startsWith(`${dep}:`));
+    if (failedDep && failedDep.status === "failed") {
+      return { ok: false, reason: `dependência falhou: ${dep}` };
+    }
+    // If dependency was skipped optionally, allow optional dependents; otherwise block.
+    if (failedDep && failedDep.status === "skipped") {
+      return { ok: false, reason: `dependência ausente/skipped: ${dep}` };
+    }
+    return { ok: false, reason: `dependência não concluída: ${dep}` };
+  }
+  return { ok: true };
+}
+
+/**
+ * Execute a whole Reversa pipeline.
  *
  * @param {object} options
- * @param {string} options.cwd
- * @param {string} options.pipeline
- * @param {Record<string, any>} options.answers
- * @param {Map<string, { path: string, baseDir: string, description?: string }>} options.skillIndex
- * @param {any} [options.model]
- * @param {string} [options.thinkingLevel]
- * @param {number} [options.concurrency]
- * @param {boolean} [options.resume]
- * @param {string} [options.skillsDir]
- * @param {AbortSignal} [options.signal]
- * @param {(update: any) => void} [options.onProgress]
- * @param {typeof defaultRunSubagent} [options.runSubagent]
  */
 export async function runPipeline({
   cwd,
@@ -248,6 +351,8 @@ export async function runPipeline({
   let cost = 0;
   let aborted = false;
   let sandboxViolation = null;
+  /** @type {string} */
+  let status = "completed";
 
   let state = mergeAnswers(readState(cwd), answers);
   state.phase = state.phase ?? "reconhecimento";
@@ -266,7 +371,6 @@ export async function runPipeline({
   state.folders = layout.folders;
   state.forward_folder = layout.forward_folder;
 
-  // Automations for discovery always pin the active knowledge source.
   if (pipeline === "discovery") {
     setActiveSpecSource(state, "discovery");
   } else {
@@ -283,10 +387,6 @@ export async function runPipeline({
 
   const roots = sandboxRoots(cwd, state, pipeline, state);
   const rootNames = roots.map((root) => relative(resolve(cwd), root) || ".");
-
-  // The orchestrator's own writes go through the same guard as the child
-  // write/edit tools. This runs before Scout, so a symlinked `.reversa`
-  // raises WriteOutsideSandboxError here rather than escaping the project.
   const guard = createSandboxGuard(cwd, roots);
 
   const runId = new Date().toISOString().replace(/[:.]/g, "-");
@@ -303,13 +403,32 @@ export async function runPipeline({
       usage,
       cost,
       aborted: true,
+      status: "blocked",
       runDir,
       report: `# Reversa — pipeline \`${pipeline}\`\n\n❌ Sandbox violada antes de iniciar: ${error.message}`,
     };
   }
 
-  /** Track resume ledger in `state.completed`, alongside existing phase entries. */
+  // Controller-owned code intelligence preflight/materialization.
+  /** @type {any} */
+  let codeIntel = null;
+  try {
+    codeIntel = await createCodeIntelSession({ projectRoot: cwd, signal });
+    if (codeIntel.available) {
+      codeIntel = await ensureIndexedAndMaterialized(codeIntel, { signal });
+    } else {
+      warnings.push(`code intelligence unavailable: ${codeIntel.reason ?? "unknown"}`);
+    }
+    writeSessionEvents(runDir, codeIntel);
+  } catch (error) {
+    warnings.push(`code intelligence preflight failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
   const completed = new Set(Array.isArray(state.completed) ? state.completed : []);
+  /** @type {Set<string>} */
+  const succeededStageIds = new Set(
+    [...completed].map((key) => String(key).split(":")[0]),
+  );
 
   const plannedStages = definition.stages;
   let index = 0;
@@ -319,7 +438,60 @@ export async function runPipeline({
     index += 1;
     if (signal?.aborted) {
       aborted = true;
+      status = "aborted";
       break;
+    }
+
+    if (stage.kind === "controller") {
+      onProgress?.({ stage: stage.label, index, total, status: "start", runs: 1 });
+      try {
+        const controllerResult = await runControllerStage({
+          stage,
+          cwd,
+          folder,
+          skillsDir,
+          guard,
+          runDir,
+        });
+        stages.push({
+          id: stage.id,
+          label: stage.label,
+          status: controllerResult.ok ? "done" : stage.optional || stage.failPipeline === false ? "failed" : "failed",
+          reason: controllerResult.ok ? undefined : controllerResult.reason,
+        });
+        if (controllerResult.ok) {
+          completed.add(stage.id);
+          succeededStageIds.add(stage.id);
+        } else {
+          warnings.push(`${stage.label}: ${controllerResult.reason}`);
+          if (stage.failPipeline !== false && !stage.optional) {
+            status = "failed";
+            aborted = true;
+            break;
+          }
+          status = status === "completed" ? "completed_with_gaps" : status;
+        }
+        state.completed = [...completed];
+        state.phase = stage.id;
+        writeState(cwd, state, guard);
+        onProgress?.({
+          stage: stage.label,
+          index,
+          total,
+          status: controllerResult.ok ? "done" : "failed",
+        });
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        stages.push({ id: stage.id, label: stage.label, status: "failed", reason });
+        warnings.push(`${stage.label} falhou: ${reason}`);
+        if (stage.failPipeline !== false && !stage.optional) {
+          status = "failed";
+          aborted = true;
+          break;
+        }
+        status = status === "completed" ? "completed_with_gaps" : status;
+      }
+      continue;
     }
 
     if (stage.skill && !skillIndex.has(stage.skill)) {
@@ -340,18 +512,52 @@ export async function runPipeline({
       continue;
     }
 
+    const dependency = dependenciesSatisfied(succeededStageIds, stage, stages);
+    if (!dependency.ok) {
+      stages.push({
+        id: stage.id,
+        label: stage.label,
+        status: "skipped",
+        reason: dependency.reason,
+      });
+      onProgress?.({ stage: stage.label, index, total, status: "skipped" });
+      if (stage.failPipeline !== false && !stage.optional) {
+        status = "failed";
+        aborted = true;
+        warnings.push(`${stage.label} bloqueada: ${dependency.reason}`);
+        break;
+      }
+      status = status === "completed" ? "completed_with_gaps" : status;
+      continue;
+    }
+
+    // Auto-approve migrate phase gates before architecture/generation stages.
+    if (pipeline === "migrate" && stage.id === "designer-architecture") {
+      autoApproveMigrationPhase(cwd, folder, "topology", warnings, guard);
+    }
+    if (pipeline === "migrate" && stage.id === "screen-translator-generation") {
+      autoApproveMigrationPhase(cwd, folder, "screen", warnings, guard);
+    }
+
     const modules = stage.fanOut === "modules" ? listScoutModules(readSurface(cwd)) : [];
+    const units = stage.fanOut === "units" ? listWriterUnits(cwd, state) : [];
     if (stage.fanOut === "modules" && modules.length === 0) {
       warnings.push(
         `${stage.label}: nenhum módulo encontrado em .reversa/context/surface.json; executando uma única vez.`,
       );
     }
+    if (stage.fanOut === "units" && units.length === 0) {
+      warnings.push(
+        `${stage.label}: nenhuma unit encontrada; executando uma única vez com fallback module.`,
+      );
+    }
 
-    const runs = expandStages([stage], modules);
+    const runs = expandStages([stage], modules, units);
     const pending = runs.filter((run) => !(resume && completed.has(run.key)));
     for (const run of runs) {
       if (pending.includes(run)) continue;
       stages.push({ id: run.key, label: stage.label, status: "skipped", reason: "já concluída (resume)" });
+      succeededStageIds.add(stage.id);
     }
     if (pending.length === 0) {
       onProgress?.({ stage: stage.label, index, total, status: "skipped" });
@@ -361,18 +567,24 @@ export async function runPipeline({
     onProgress?.({ stage: stage.label, index, total, status: "start", runs: pending.length });
 
     const tasks = pending.map((run) => async () => {
-      const label = run.module ? `${stage.label} — ${run.module}` : stage.label;
+      const label = run.module
+        ? `${stage.label} — ${run.module}`
+        : run.unit
+          ? `${stage.label} — ${run.unit}`
+          : stage.label;
       const stagePipeline = stage.requires === "regression-watch" ? "regression-check" : pipeline;
       const stageRoots = stagePipeline === pipeline ? roots : sandboxRoots(cwd, state, stagePipeline, state);
       const stageRootNames = stageRoots.map((root) => relative(resolve(cwd), root) || ".");
       const task = buildStageTask({
         stage,
         module: run.module,
+        unit: run.unit,
         skillEntry: stage.skill ? skillIndex.get(stage.skill) : undefined,
         state,
         folder,
         writableRoots: stageRootNames,
         skillsDir,
+        codeIntelAvailable: Boolean(codeIntel?.available),
       });
 
       try {
@@ -384,6 +596,7 @@ export async function runPipeline({
           thinkingLevel,
           allowedRoots: stageRoots,
           signal,
+          codeIntelSession: codeIntel,
         });
 
         writeFileSync(
@@ -399,9 +612,6 @@ export async function runPipeline({
         usage.total += result.usage?.total ?? 0;
         cost += result.cost ?? 0;
 
-        // A child's WriteOutsideSandboxError never propagates (the agent loop
-        // converts it to an error tool result), so check the guard's ledger.
-        // A sandbox violation is one of only two events that stop the loop.
         if (result.violations?.length) {
           sandboxViolation = result.violations[0];
           return {
@@ -437,6 +647,10 @@ export async function runPipeline({
     const stageResults = await withConcurrency(tasks, stage.fanOut ? concurrency : 1);
     stages.push(...stageResults);
 
+    const anyFailed = stageResults.some((result) => result.status === "failed");
+    const anyDone = stageResults.some((result) => result.status === "done");
+    if (anyDone) succeededStageIds.add(stage.id);
+
     state.completed = [...completed];
     state.phase = stage.id;
     try {
@@ -452,15 +666,27 @@ export async function runPipeline({
 
     if (sandboxViolation) {
       warnings.push(`Execução interrompida por violação de sandbox: ${sandboxViolation.message}`);
+      status = "blocked";
+      aborted = true;
       break;
     }
     if (signal?.aborted || aborted) {
       aborted = true;
+      status = "aborted";
       break;
     }
 
-    // Specs organization must be persisted after Scout and before any
-    // Archaeologist (packaged-skills/reversa/SKILL.md, "Ação especial após o Scout").
+    if (anyFailed && stage.failPipeline !== false && !stage.optional) {
+      status = "failed";
+      aborted = true;
+      warnings.push(`${stage.label}: falha obrigatória interrompeu o pipeline`);
+      break;
+    }
+    if (anyFailed) {
+      status = status === "completed" ? "completed_with_gaps" : status;
+    }
+
+    // Specs organization after Scout.
     if (pipeline === "discovery" && stage.id === "scout") {
       const choice = answers.specs_choice ?? "auto";
       let granularity = choice;
@@ -486,12 +712,40 @@ export async function runPipeline({
         if (!(error instanceof WriteOutsideSandboxError)) throw error;
         warnings.push(`Execução interrompida por violação de sandbox: ${error.message}`);
         aborted = true;
+        status = "blocked";
         break;
+      }
+
+      // Refresh code-intel module materialization after Scout.
+      if (codeIntel?.available) {
+        try {
+          const modulesAfterScout = listScoutModules(readSurface(cwd));
+          codeIntel = await ensureIndexedAndMaterialized(codeIntel, {
+            signal,
+            modules: modulesAfterScout,
+          });
+          writeSessionEvents(runDir, codeIntel);
+        } catch (error) {
+          warnings.push(`code intelligence module materialization failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
       }
     }
   }
 
-  const report = buildReport({ pipeline, definition, stages, warnings, usage, cost, runDir, folder, aborted });
+  if (aborted && status === "completed") status = "aborted";
+  const report = buildReport({
+    pipeline,
+    definition,
+    stages,
+    warnings,
+    usage,
+    cost,
+    runDir,
+    folder,
+    aborted,
+    status,
+    codeIntel: codeIntel ? statusSnapshot(codeIntel) : null,
+  });
 
   return {
     stages,
@@ -499,21 +753,172 @@ export async function runPipeline({
     usage,
     cost,
     aborted,
+    status,
     runDir,
+    codeIntel: codeIntel ? statusSnapshot(codeIntel) : null,
     report: report.length > REPORT_LIMIT ? `${report.slice(0, REPORT_LIMIT)}\n… [relatório truncado]` : report,
   };
 }
 
 /**
  * @param {object} input
+ */
+async function runControllerStage({ stage, cwd, folder, skillsDir, guard, runDir }) {
+  if (stage.handler === "docs-vendor") {
+    const docsRoot = join(resolve(cwd), folder);
+    mkdirSync(guard(docsRoot), { recursive: true });
+    const pinsPath = skillsDir
+      ? join(skillsDir, "reversa-docs-publisher", "references", "vendor-pins.yaml")
+      : null;
+    if (!pinsPath || !existsSync(pinsPath)) {
+      return { ok: false, reason: "vendor-pins.yaml não encontrado nas packaged skills" };
+    }
+    const result = await ensureDocsVendors({ docsRoot, pinsPath });
+    writeFileSync(
+      guard(join(runDir, "docs-vendor.json")),
+      `${JSON.stringify(result, null, 2)}\n`,
+      "utf8",
+    );
+    if (result.missing.length > 0) {
+      return {
+        ok: true,
+        reason: `vendor parcial; missing=${result.missing.join(",")}`,
+      };
+    }
+    return { ok: true };
+  }
+
+  if (stage.handler === "docs-smoke") {
+    const docsRoot = join(resolve(cwd), folder);
+    const result = await smokeTestDocs({ docsRoot });
+    writeFileSync(
+      guard(join(runDir, "docs-smoke.json")),
+      `${JSON.stringify(result, null, 2)}\n`,
+      "utf8",
+    );
+    // Persist smoke markers beside docs when possible.
+    try {
+      const statePath = join(docsRoot, ".state.json");
+      /** @type {Record<string, any>} */
+      let docsState = {};
+      if (existsSync(statePath)) {
+        try { docsState = JSON.parse(readFileSync(statePath, "utf8")); } catch { docsState = {}; }
+      }
+      docsState.smokeTestFailed = !result.ok;
+      docsState.smokeTestErrors = result.errors;
+      writeFileSync(guard(statePath), `${JSON.stringify(docsState, null, 2)}\n`, "utf8");
+    } catch {
+      // non-fatal
+    }
+    if (!result.ok) {
+      return {
+        ok: false,
+        reason: `smoke falhou com ${result.errors.length} erro(s)`,
+      };
+    }
+    return { ok: true };
+  }
+
+  return { ok: false, reason: `handler desconhecido: ${stage.handler}` };
+}
+
+/**
+ * Auto-approve migrate phase recommendations for unattended runs.
+ *
+ * @param {string} cwd
+ * @param {string} folder
+ * @param {"topology" | "screen"} kind
+ * @param {string[]} warnings
+ * @param {(absolutePath: string) => string} guard
+ */
+function autoApproveMigrationPhase(cwd, folder, kind, warnings, guard) {
+  const migrationRoot = join(resolve(cwd), folder);
+  const statePath = join(migrationRoot, ".state.json");
+  /** @type {Record<string, any>} */
+  let migrationState = {
+    schemaVersion: 2,
+    completedAgents: [],
+    pendingAgents: [],
+    currentAgent: {
+      agent: null,
+      phase: null,
+      status: null,
+      topologyApproved: false,
+      screenModeApproved: false,
+    },
+    auto: true,
+  };
+  if (existsSync(statePath)) {
+    try {
+      migrationState = {
+        ...migrationState,
+        ...JSON.parse(readFileSync(statePath, "utf8")),
+      };
+    } catch {
+      // keep defaults
+    }
+  }
+  migrationState.currentAgent = {
+    ...(migrationState.currentAgent ?? {}),
+    status: "running",
+  };
+
+  if (kind === "topology") {
+    migrationState.currentAgent.agent = "designer";
+    migrationState.currentAgent.phase = "architecture";
+    migrationState.currentAgent.topologyApproved = true;
+    warnings.push("migrate unattended: topology recommendation auto-approved (topologyApproved=true)");
+    appendAmbiguity(migrationRoot, "Designer topology auto-approved recommended option", guard);
+  } else {
+    migrationState.currentAgent.agent = "screen_translator";
+    migrationState.currentAgent.phase = "generation";
+    migrationState.currentAgent.screenModeApproved = true;
+    warnings.push("migrate unattended: screen mode recommendation auto-approved (screenModeApproved=true)");
+    appendAmbiguity(migrationRoot, "Screen Translator mode auto-approved recommended option", guard);
+  }
+
+  mkdirSync(guard(migrationRoot), { recursive: true });
+  writeFileSync(guard(statePath), `${JSON.stringify(migrationState, null, 2)}\n`, "utf8");
+}
+
+/**
+ * @param {string} migrationRoot
+ * @param {string} line
+ * @param {(absolutePath: string) => string} guard
+ */
+function appendAmbiguity(migrationRoot, line, guard) {
+  const path = join(migrationRoot, "ambiguity_log.md");
+  const stamp = new Date().toISOString();
+  const entry = `\n- [auto-decidido] ${stamp} — ${line}\n`;
+  if (existsSync(path)) {
+    writeFileSync(guard(path), `${readFileSync(path, "utf8").replace(/\s*$/, "")}${entry}`, "utf8");
+  } else {
+    writeFileSync(guard(path), `# Ambiguity log\n${entry}`, "utf8");
+  }
+}
+
+/**
+ * @param {object} input
  * @returns {string}
  */
-function buildReport({ pipeline, definition, stages, warnings, usage, cost, runDir, folder, aborted }) {
+function buildReport({
+  pipeline,
+  definition,
+  stages,
+  warnings,
+  usage,
+  cost,
+  runDir,
+  folder,
+  aborted,
+  status,
+  codeIntel,
+}) {
   const icon = { done: "✅", skipped: "⏭", failed: "❌" };
   const lines = [
     `# Reversa — pipeline \`${pipeline}\` (${definition.label})`,
     "",
-    aborted ? "**Execução interrompida antes do fim.**" : "**Execução concluída.**",
+    aborted ? `**Execução interrompida (${status}).**` : `**Execução concluída (${status}).**`,
     "",
     "## Etapas",
   ];
@@ -531,10 +936,21 @@ function buildReport({ pipeline, definition, stages, warnings, usage, cost, runD
     "",
     `Totais: ✅ ${counts.done ?? 0} · ⏭ ${counts.skipped ?? 0} · ❌ ${counts.failed ?? 0}`,
     "",
-    `## Artefatos`,
+    "## Artefatos",
     `- Specs e documentos em \`${folder}/\``,
     `- Saída bruta por etapa em \`${runDir}\``,
   );
+
+  if (codeIntel) {
+    lines.push(
+      "",
+      "## Code intelligence",
+      `- available: ${codeIntel.available}`,
+      `- project: ${codeIntel.project ?? "n/a"}`,
+      `- binary: ${codeIntel.binary_version ?? "n/a"}`,
+      `- actions: ${(codeIntel.curated_actions ?? []).join(", ") || "none"}`,
+    );
+  }
 
   if (warnings.length) {
     lines.push("", "## Avisos");

@@ -6,6 +6,8 @@ import { DEFAULT_FANOUT_CONCURRENCY, runPipeline } from "./lib/orchestrator.js";
 import { PIPELINE_IDS } from "./lib/pipelines.js";
 import { readSpecsSection, readState } from "./lib/reversa-state.js";
 import { buildSkillBlock, stripFrontmatter } from "./lib/skill-block.js";
+import { createCodeIntelTool } from "./lib/code-intel-tool.js";
+import { createCodeIntelSession, ensureIndexedAndMaterialized, statusSnapshot } from "./lib/code-intelligence/index.js";
 
 const AUTO_COMMAND = "reversa-auto";
 
@@ -42,6 +44,48 @@ export function createReversaPiExtension() {
       }
       console.warn(`[Reversa] ${message}`);
     };
+
+    // Host-facing curated code intelligence (same tool surface as children).
+    /** @type {any} */
+    let hostCodeIntelSession = null;
+    pi.registerTool(createCodeIntelTool({
+      getSession: async () => hostCodeIntelSession,
+      setSession: (session) => { hostCodeIntelSession = session; },
+    }));
+
+    pi.registerCommand("reversa-cbm", {
+      description: "Status/refresh/enable/disable do code intelligence (codebase-memory).",
+      handler: async (args, commandCtx) => {
+        const cwd = commandCtx.cwd ?? process.cwd();
+        const parts = String(args ?? "").trim().split(/\s+/).filter(Boolean);
+        const action = (parts[0] || "status").toLowerCase();
+        if (action === "disable") {
+          process.env.REVERSA_CBM_ENABLED = "false";
+          hostCodeIntelSession = null;
+          if (commandCtx.hasUI) commandCtx.ui.notify("code intelligence disabled for this process", "info");
+          else console.log("[Reversa] code intelligence disabled for this process");
+          return;
+        }
+        if (action === "enable") {
+          process.env.REVERSA_CBM_ENABLED = "true";
+        }
+        try {
+          let session = await createCodeIntelSession({ projectRoot: cwd });
+          if ((action === "refresh" || action === "enable" || action === "status") && session.available) {
+            session = await ensureIndexedAndMaterialized(session, { forceRefresh: action === "refresh" });
+          }
+          hostCodeIntelSession = session;
+          const snapshot = statusSnapshot(session);
+          const text = JSON.stringify(snapshot, null, 2);
+          if (commandCtx.hasUI) commandCtx.ui.notify(`cbm ${action}: available=${snapshot.available}`, snapshot.available ? "info" : "warning");
+          console.log(text);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (commandCtx.hasUI) commandCtx.ui.notify(`cbm failed: ${message}`, "error");
+          else console.error(`[Reversa] cbm failed: ${message}`);
+        }
+      },
+    });
 
     // Registered at factory time, not in session_start: the tool must exist
     // from the very first turn, before any command runs.
@@ -130,6 +174,8 @@ export function createReversaPiExtension() {
             warnings: result.warnings,
             usage: result.usage,
             runDir: result.runDir,
+            status: result.status,
+            codeIntel: result.codeIntel,
           },
         };
       },
