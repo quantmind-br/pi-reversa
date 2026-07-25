@@ -9,9 +9,15 @@ import {
   outputFolder,
   readState,
   readSurface,
+  resolveProjectLayout,
+  setActiveSpecSource,
   writeSpecsSection,
   writeState,
 } from "./reversa-state.js";
+import {
+  getPipelineWriteRoots,
+  listRegressionWatchPaths,
+} from "reversa/paths/layout.js";
 import { buildSkillBlock, stripFrontmatter } from "./skill-block.js";
 import { runSubagent as defaultRunSubagent } from "./subagent.js";
 
@@ -21,33 +27,62 @@ export const DEFAULT_FANOUT_CONCURRENCY = 3;
 const REPORT_LIMIT = 12_000;
 
 /**
- * Extra write roots a specific pipeline needs beyond the shared ones.
- *
- * `docs` renders a self-contained mini-site into `_reversa_docs/`
- * (packaged-skills/reversa-docs/SKILL.md), which is outside the discovery
- * output folder. Listed explicitly so the sandbox stays closed: no pipeline
- * gains access to arbitrary project paths.
+ * @deprecated Pipeline roots now come from resolveProjectLayout + getPipelineWriteRoots.
+ * Kept as an empty map for older tests that still import the symbol.
  */
-export const PIPELINE_EXTRA_ROOTS = { docs: ["_reversa_docs"] };
+export const PIPELINE_EXTRA_ROOTS = {};
 
 /**
- * Sandbox roots subagents of `pipeline` may write to, mirroring the Reversa
- * absolute rule (packaged-skills/reversa/SKILL.md, "Regra absoluta").
+ * Sandbox roots subagents of `pipeline` may write to.
  *
- * `folder` originates in `.reversa/state.json` and is untrusted: `"."` would
- * make the entire project writable and `"../x"` would leave it. Unsafe values
- * are replaced by the default here as well as in `outputFolder()`, so a direct
- * caller cannot widen the sandbox by accident.
+ * Roots are workflow-specific:
+ * - discovery → `.reversa` + folders.discovery
+ * - migrate → `.reversa` + folders.migration
+ * - docs → `.reversa` + folders.docs
+ * - regression-check additionally receives only existing regression-watch.md files
  *
  * @param {string} cwd
- * @param {string} folder output_folder from state.json
+ * @param {string | Record<string, any>} folderOrState output folder string or full state
  * @param {string} [pipeline]
+ * @param {Record<string, any>} [state]
  * @returns {string[]} absolute paths
  */
-export function sandboxRoots(cwd, folder, pipeline) {
+export function sandboxRoots(cwd, folderOrState, pipeline = "discovery", state) {
   const base = resolve(cwd);
-  const safeFolder = isSafeOutputFolder(folder) ? folder.trim() : DEFAULT_OUTPUT_FOLDER;
-  const names = [".reversa", safeFolder, "_reversa_forward", ...(PIPELINE_EXTRA_ROOTS[pipeline] ?? [])];
+  const sourceState =
+    state && typeof state === "object"
+      ? state
+      : folderOrState && typeof folderOrState === "object"
+        ? folderOrState
+        : { output_folder: folderOrState };
+
+  const layout = resolveProjectLayout(sourceState, cwd);
+  // If a bare unsafe folder string was passed, force the default discovery path.
+  if (typeof folderOrState === "string" && !isSafeOutputFolder(folderOrState)) {
+    layout.folders.discovery = DEFAULT_OUTPUT_FOLDER;
+    layout.output_folder = DEFAULT_OUTPUT_FOLDER;
+  } else if (typeof folderOrState === "string" && isSafeOutputFolder(folderOrState) && !sourceState.folders) {
+    // Preserve explicit folder argument used by unit tests / direct callers.
+    if (pipeline === "discovery") layout.folders.discovery = folderOrState.trim();
+  }
+
+  /** @type {string[]} */
+  let names = getPipelineWriteRoots(
+    {
+      ...layout,
+      folders: layout.folders,
+      output_folder: layout.output_folder,
+      forward_folder: layout.forward_folder,
+    },
+    pipeline === "migrate" ? "migration" : pipeline,
+  );
+
+  if (pipeline === "regression-check") {
+    // Only existing regression-watch.md files under forward are writable, never the whole tree.
+    names = names.filter((name) => name !== layout.forward_folder);
+    names.push(...listRegressionWatchPaths(cwd, layout.forward_folder));
+  }
+
   return [...new Set(names)].map((name) => join(base, name));
 }
 
@@ -55,22 +90,11 @@ export function sandboxRoots(cwd, folder, pipeline) {
  * Does the project have at least one forward-cycle regression watch file?
  *
  * @param {string} cwd
+ * @param {Record<string, any>} [state]
  */
-export function hasRegressionWatch(cwd) {
-  try {
-    const forwardDir = join(resolve(cwd), "_reversa_forward");
-    return readdirSync(forwardDir, { withFileTypes: true }).some((entry) => {
-      if (!entry.isDirectory()) return false;
-      try {
-        readFileSync(join(forwardDir, entry.name, "regression-watch.md"), "utf8");
-        return true;
-      } catch {
-        return false;
-      }
-    });
-  } catch {
-    return false;
-  }
+export function hasRegressionWatch(cwd, state = {}) {
+  const layout = resolveProjectLayout(state, cwd);
+  return listRegressionWatchPaths(cwd, layout.forward_folder).length > 0;
 }
 
 /**
@@ -127,7 +151,7 @@ export function buildStageTask({ stage, module, skillEntry, state, folder, writa
       `- Pasta de saída: ${folder}`,
       `- answer_mode = file: NUNCA pergunte nada. Toda dúvida vai para ${folder}/questions.md com contexto e marcador 🔴 LACUNA na spec correspondente.`,
       "- Você não tem `bash`. Para histórico de git use a ferramenta `reversa_git`.",
-      `- Escreva APENAS em ${(writableRoots ?? [".reversa", folder, "_reversa_forward"]).map((root) => `${root}/`).join(", ")} — e em _reversa_forward/ apenas a seção de histórico de <feature>/regression-watch.md. Escritas fora disso falham por design.`,
+      `- Escreva APENAS em ${(writableRoots ?? [".reversa", folder]).map((root) => (root.endsWith(".md") ? root : `${root}/`)).join(", ")}. Escritas fora disso falham por design.`,
       "- Não peça CONTINUAR, não ofereça /clear, não sugira próximos passos interativos.",
       "- Ao terminar, responda com um resumo de no máximo 20 linhas: artefatos criados, contagens 🟢/🟡/🔴, e avisos.",
     ].join("\n"),
@@ -227,14 +251,37 @@ export async function runPipeline({
 
   let state = mergeAnswers(readState(cwd), answers);
   state.phase = state.phase ?? "reconhecimento";
+
   if (state.output_folder !== undefined && !isSafeOutputFolder(state.output_folder)) {
     warnings.push(
       `output_folder inválido em .reversa/state.json (${JSON.stringify(state.output_folder)}); usando \`${DEFAULT_OUTPUT_FOLDER}\`.`,
     );
-    state.output_folder = DEFAULT_OUTPUT_FOLDER;
+    delete state.output_folder;
   }
-  const folder = outputFolder(state);
-  const roots = sandboxRoots(cwd, folder, pipeline);
+
+  const layout = resolveProjectLayout(state, cwd);
+  warnings.push(...layout.warnings);
+  state.layout_mode = layout.layout_mode;
+  state.specs_root = layout.specs_root;
+  state.folders = layout.folders;
+  state.forward_folder = layout.forward_folder;
+
+  // Automations for discovery always pin the active knowledge source.
+  if (pipeline === "discovery") {
+    setActiveSpecSource(state, "discovery");
+  } else {
+    state.output_folder = layout.output_folder;
+    state.active_spec_source = layout.active_spec_source;
+  }
+
+  const folder =
+    pipeline === "docs"
+      ? state.folders.docs
+      : pipeline === "migrate"
+        ? state.folders.migration
+        : state.output_folder;
+
+  const roots = sandboxRoots(cwd, state, pipeline, state);
   const rootNames = roots.map((root) => relative(resolve(cwd), root) || ".");
 
   // The orchestrator's own writes go through the same guard as the child
@@ -282,12 +329,12 @@ export async function runPipeline({
       continue;
     }
 
-    if (stage.requires === "regression-watch" && !hasRegressionWatch(cwd)) {
+    if (stage.requires === "regression-watch" && !hasRegressionWatch(cwd, state)) {
       stages.push({
         id: stage.id,
         label: stage.label,
         status: "skipped",
-        reason: "nenhum _reversa_forward/*/regression-watch.md",
+        reason: `nenhum ${state.forward_folder}/*/regression-watch.md`,
       });
       onProgress?.({ stage: stage.label, index, total, status: "skipped" });
       continue;
@@ -315,13 +362,16 @@ export async function runPipeline({
 
     const tasks = pending.map((run) => async () => {
       const label = run.module ? `${stage.label} — ${run.module}` : stage.label;
+      const stagePipeline = stage.requires === "regression-watch" ? "regression-check" : pipeline;
+      const stageRoots = stagePipeline === pipeline ? roots : sandboxRoots(cwd, state, stagePipeline, state);
+      const stageRootNames = stageRoots.map((root) => relative(resolve(cwd), root) || ".");
       const task = buildStageTask({
         stage,
         module: run.module,
         skillEntry: stage.skill ? skillIndex.get(stage.skill) : undefined,
         state,
         folder,
-        writableRoots: rootNames,
+        writableRoots: stageRootNames,
         skillsDir,
       });
 
@@ -332,7 +382,7 @@ export async function runPipeline({
           task,
           model,
           thinkingLevel,
-          allowedRoots: roots,
+          allowedRoots: stageRoots,
           signal,
         });
 

@@ -1,11 +1,23 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import {
+  DEFAULT_SPECS_ROOT,
+  defaultWorkflowFolders,
+  isSafeRelativeFolder,
+  resolveLayout,
+  setActiveSpecSource as setLayoutActiveSpecSource,
+} from "reversa/paths/layout.js";
 
 const STATE_PATH = [".reversa", "state.json"];
 const SURFACE_PATH = [".reversa", "context", "surface.json"];
 const CONFIG_PATH = [".reversa", "config.toml"];
 
-export const DEFAULT_OUTPUT_FOLDER = "_reversa_sdd";
+/** @deprecated Prefer DEFAULT_DISCOVERY_FOLDER / resolveProjectLayout(). */
+export const DEFAULT_OUTPUT_FOLDER = defaultWorkflowFolders(DEFAULT_SPECS_ROOT).discovery;
+export const DEFAULT_DISCOVERY_FOLDER = DEFAULT_OUTPUT_FOLDER;
+export const DEFAULT_FORWARD_FOLDER = defaultWorkflowFolders(DEFAULT_SPECS_ROOT).forward;
+export const DEFAULT_DOCS_FOLDER = defaultWorkflowFolders(DEFAULT_SPECS_ROOT).docs;
+export const DEFAULT_MIGRATION_FOLDER = defaultWorkflowFolders(DEFAULT_SPECS_ROOT).migration;
 
 /** Valid `[specs] granularity` values, per step-03-specs-organization.md. */
 export const SPEC_GRANULARITIES = ["module", "use-case", "endpoint", "hybrid", "feature", "custom"];
@@ -15,11 +27,6 @@ const noGuard = (absolutePath) => absolutePath;
 
 /**
  * Write a file atomically, creating parent directories as needed.
- *
- * Every mutating path — the temp file, its parent directory, and the final
- * destination — passes through `guard`. The orchestrator supplies the same
- * sandbox guard the child `write`/`edit` tools use, so a symlinked `.reversa`
- * is rejected here too, before Scout ever runs.
  *
  * @param {string} destination absolute path
  * @param {string} content
@@ -39,8 +46,17 @@ function pathIn(cwd, parts) {
 }
 
 /**
- * Read `.reversa/state.json`. Missing or corrupt files yield `{}` — the
- * orchestrator must never fail to start because of a stale state file.
+ * Resolve layout for a project state, detecting on-disk legacy trees when needed.
+ *
+ * @param {Record<string, any>} [state]
+ * @param {string} [cwd]
+ */
+export function resolveProjectLayout(state = {}, cwd) {
+  return resolveLayout(state, cwd ? { projectRoot: cwd } : {});
+}
+
+/**
+ * Read `.reversa/state.json`. Missing or corrupt files yield `{}`.
  *
  * @param {string} cwd
  * @returns {Record<string, any>}
@@ -57,10 +73,21 @@ export function readState(cwd) {
 /**
  * @param {string} cwd
  * @param {Record<string, any>} state
- * @param {(absolutePath: string) => string} [guard] sandbox guard
+ * @param {(absolutePath: string) => string} [guard]
  */
 export function writeState(cwd, state, guard) {
-  atomicWrite(pathIn(cwd, STATE_PATH), `${JSON.stringify(state, null, 2)}\n`, guard);
+  const layout = resolveProjectLayout(state, cwd);
+  const next = {
+    ...state,
+    schema_version: Math.max(Number(state.schema_version) || 0, 3),
+    layout_mode: layout.layout_mode,
+    specs_root: layout.specs_root,
+    folders: layout.folders,
+    active_spec_source: layout.active_spec_source,
+    output_folder: layout.output_folder,
+    forward_folder: layout.forward_folder,
+  };
+  atomicWrite(pathIn(cwd, STATE_PATH), `${JSON.stringify(next, null, 2)}\n`, guard);
 }
 
 /**
@@ -78,10 +105,6 @@ export function readSurface(cwd) {
 
 /**
  * Extract module names from a Scout `surface.json`.
- *
- * The canonical schema (reversa-scout/references/surface-schema.md) puts a
- * plain string array at `surface.modules`; the two fallbacks tolerate older or
- * nested shapes rather than silently degrading the Archaeologist fan-out.
  *
  * @param {Record<string, any> | null | undefined} surface
  * @returns {string[]}
@@ -113,9 +136,6 @@ export function listScoutModules(surface) {
 
 /**
  * Read the `[specs]` section of `.reversa/config.toml`.
- *
- * Deliberately a line scanner, not a TOML round-trip: the orchestrator must
- * never rewrite sections it does not own.
  *
  * @param {string} cwd
  * @returns {{ granularity?: string, custom_folders?: string[] }}
@@ -157,13 +177,11 @@ export function readSpecsSection(cwd) {
 }
 
 /**
- * Persist the specs organization decision. Idempotent: an already-decided
- * `granularity` is immutable (step-03 treats the decision as final), and other
- * sections are never rewritten.
+ * Persist the specs organization decision.
  *
  * @param {string} cwd
  * @param {{ granularity: string, customFolders?: string[] }} decision
- * @param {(absolutePath: string) => string} [guard] sandbox guard
+ * @param {(absolutePath: string) => string} [guard]
  * @returns {{ written: boolean, reason: string }}
  */
 export function writeSpecsSection(cwd, { granularity, customFolders }, guard) {
@@ -199,46 +217,41 @@ export function writeSpecsSection(cwd, { granularity, customFolders }, guard) {
 }
 
 /**
- * Is `folder` usable as a Reversa output directory?
- *
- * `output_folder` comes from `.reversa/state.json`, which is untrusted input,
- * and it is fed straight into `sandboxRoots()`. A value like `"."` would make
- * the whole project writable and `"../outside"` would escape it entirely —
- * neither of which the write guard can catch, because by then they are
- * legitimate roots. So reject anything that is not a plain project-relative
- * subdirectory before it ever reaches the sandbox.
+ * Is `folder` usable as a Reversa artifact directory?
  *
  * @param {unknown} folder
  * @returns {boolean}
  */
 export function isSafeOutputFolder(folder) {
-  if (typeof folder !== "string") return false;
-  const value = folder.trim();
-  if (!value) return false;
-
-  // Absolute (POSIX or Windows-style) or UNC.
-  if (isAbsolute(value) || /^[A-Za-z]:/.test(value) || value.startsWith("\\")) return false;
-  // NUL and other control characters.
-  if (/[\0-\x1f]/.test(value)) return false;
-
-  const segments = value.split(/[/\\]/).filter((segment) => segment !== "");
-  if (segments.length === 0) return false;
-  // "." and ".." in any position: no self-reference, no traversal.
-  if (segments.some((segment) => segment === "." || segment === "..")) return false;
-  // Never let the output folder alias Reversa's own control directory.
-  if (segments[0] === ".reversa") return false;
-
-  return true;
+  return isSafeRelativeFolder(folder);
 }
 
 /**
- * Resolve the output folder, falling back to the default whenever the
- * persisted value is missing or unsafe.
+ * Resolve the primary output folder for a pipeline/state.
+ *
+ * For discovery this is folders.discovery; callers that need the full map
+ * should use resolveProjectLayout().
  *
  * @param {Record<string, any>} state
+ * @param {string} [cwd]
  * @returns {string}
  */
-export function outputFolder(state) {
-  const folder = state?.output_folder;
-  return isSafeOutputFolder(folder) ? folder.trim() : DEFAULT_OUTPUT_FOLDER;
+export function outputFolder(state, cwd) {
+  return resolveProjectLayout(state, cwd).output_folder;
+}
+
+/**
+ * @param {Record<string, any>} state
+ * @param {string} [cwd]
+ */
+export function forwardFolder(state, cwd) {
+  return resolveProjectLayout(state, cwd).forward_folder;
+}
+
+/**
+ * @param {Record<string, any>} state
+ * @param {'discovery' | 'new' | null} source
+ */
+export function setActiveSpecSource(state, source) {
+  return setLayoutActiveSpecSource(state, source);
 }

@@ -34,7 +34,7 @@
     "node": ">=22.19.0"
   },
   "dependencies": {
-    "reversa": "1.2.56"
+    "reversa": "file:../reversa/reversa-1.2.57.tgz"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"

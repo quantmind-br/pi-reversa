@@ -159,21 +159,29 @@ test('writeSpecsSection preserves unrelated sections', async () => {
 });
 
 test('sandbox roots are pipeline-aware', () => {
-  const discovery = sandboxRoots('/p', '_reversa_sdd', 'discovery').map((root) => root.replace('/p/', ''));
-  assert.deepEqual(discovery, ['.reversa', '_reversa_sdd', '_reversa_forward']);
+  const discovery = sandboxRoots('/p', '.specs/discovery', 'discovery').map((root) => root.replace('/p/', ''));
+  assert.deepEqual(discovery, ['.reversa', '.specs/discovery']);
 
-  const docs = sandboxRoots('/p', '_reversa_sdd', 'docs').map((root) => root.replace('/p/', ''));
-  assert.ok(docs.includes('_reversa_docs'), 'docs pipeline must be able to write _reversa_docs/');
+  const docs = sandboxRoots('/p', { folders: {
+    discovery: '.specs/discovery', migration: '.specs/migration', forward: '.specs/forward',
+    docs: '.specs/docs', new: '.specs/new', bugs: '.specs/bugs', refactor: '.specs/refactor',
+  }}, 'docs').map((root) => root.replace('/p/', ''));
+  assert.deepEqual(docs, ['.reversa', '.specs/docs']);
   assert.equal(PIPELINE_EXTRA_ROOTS.discovery, undefined);
 });
 
-test('docs stages may write _reversa_docs but not project source', async () => {
+test('docs stages may write .specs/docs but not project source', async () => {
   await withTempDir(async (dir) => {
-    const roots = sandboxRoots(dir, '_reversa_sdd', 'docs');
+    const roots = sandboxRoots(dir, {
+      folders: {
+        discovery: '.specs/discovery', migration: '.specs/migration', forward: '.specs/forward',
+        docs: '.specs/docs', new: '.specs/new', bugs: '.specs/bugs', refactor: '.specs/refactor',
+      },
+    }, 'docs');
     const [write] = createGuardedFileTools(dir, roots);
 
-    await write.execute('1', { path: '_reversa_docs/index.html', content: '<html>' }, undefined, undefined, {});
-    assert.equal(readFileSync(join(dir, '_reversa_docs', 'index.html'), 'utf8'), '<html>');
+    await write.execute('1', { path: '.specs/docs/index.html', content: '<html>' }, undefined, undefined, {});
+    assert.equal(readFileSync(join(dir, '.specs', 'docs', 'index.html'), 'utf8'), '<html>');
 
     await assert.rejects(
       () => write.execute('2', { path: 'src/app.js', content: 'x' }, undefined, undefined, {}),
@@ -198,13 +206,13 @@ test('buildStageTask states the autonomous contract and the real write roots', (
     module: null,
     skillEntry: undefined,
     state: { project: 'demo', user_name: 'Ana' },
-    folder: '_reversa_sdd',
-    writableRoots: ['.reversa', '_reversa_sdd', '_reversa_forward', '_reversa_docs'],
+    folder: '.specs/discovery',
+    writableRoots: ['.reversa', '.specs/docs'],
   });
 
   assert.match(task, /answer_mode = file/);
   assert.match(task, /Você não tem `bash`/);
-  assert.match(task, /_reversa_docs\//);
+  assert.match(task, /\.specs\/docs\//);
   assert.match(task, /Não peça CONTINUAR/);
 });
 
@@ -228,7 +236,7 @@ test('regression-check stage points at a reference file that really exists', () 
     module: null,
     skillEntry: undefined,
     state: {},
-    folder: '_reversa_sdd',
+    folder: '.specs/discovery',
     skillsDir,
   });
   assert.ok(task.includes(referencePath), 'task must name the resolved reference path');
@@ -293,7 +301,7 @@ test('runPipeline runs discovery in order, fans out, and survives a failing stag
 
 test('runPipeline resumes by skipping stage keys already in state.completed', async () => {
   await withTempDir(async (dir) => {
-    writeState(dir, { completed: ['reconhecimento', 'scout'], output_folder: '_reversa_sdd' });
+    writeState(dir, { completed: ['reconhecimento', 'scout'], output_folder: '.specs/discovery' });
 
     const ran = [];
     const result = await runPipeline({
@@ -510,7 +518,7 @@ test('runPipeline stops the loop when a child reports a sandbox violation', asyn
 
 test('isSafeOutputFolder rejects everything that would widen the sandbox', () => {
   // Safe: plain project-relative subdirectories.
-  for (const folder of ['_reversa_sdd', 'docs/specs', 'out_dir', '_reversa_sdd/']) {
+  for (const folder of ['.specs/discovery', 'docs/specs', 'out_dir', '.specs/discovery/', '.specs']) {
     assert.equal(isSafeOutputFolder(folder), true, `${folder} should be accepted`);
   }
 
@@ -518,7 +526,7 @@ test('isSafeOutputFolder rejects everything that would widen the sandbox', () =>
   for (const folder of [
     '.', './', '..', '../outside', 'a/../..', 'a/./b', '.reversa', '.reversa/x',
     '/etc', '/tmp/evil', 'C:\\temp', '\\\\server\\share', '', '   ',
-    null, undefined, 42, {}, ['_reversa_sdd'], 'bad\0name',
+    null, undefined, 42, {}, ['.specs/discovery'], 'bad\0name',
   ]) {
     assert.equal(isSafeOutputFolder(folder), false, `${JSON.stringify(folder)} should be rejected`);
   }
@@ -526,10 +534,10 @@ test('isSafeOutputFolder rejects everything that would widen the sandbox', () =>
 
 test('outputFolder falls back to the default for unsafe persisted values', () => {
   assert.equal(outputFolder({ output_folder: '_custom' }), '_custom');
-  assert.equal(outputFolder({ output_folder: '.' }), '_reversa_sdd');
-  assert.equal(outputFolder({ output_folder: '../outside' }), '_reversa_sdd');
-  assert.equal(outputFolder({ output_folder: 'src/..' }), '_reversa_sdd');
-  assert.equal(outputFolder({}), '_reversa_sdd');
+  assert.equal(outputFolder({ output_folder: '.' }), '.specs/discovery');
+  assert.equal(outputFolder({ output_folder: '../outside' }), '.specs/discovery');
+  assert.equal(outputFolder({ output_folder: 'src/..' }), '.specs/discovery');
+  assert.equal(outputFolder({}), '.specs/discovery');
 });
 
 test('sandboxRoots never widens past the project for a hostile output_folder', () => {
@@ -540,7 +548,7 @@ test('sandboxRoots never widens past the project for a hostile output_folder', (
     for (const root of roots) {
       assert.ok(root.startsWith('/p/'), `${hostile} produced an escaping root: ${root}`);
     }
-    assert.ok(roots.includes('/p/_reversa_sdd'), 'must fall back to the default output folder');
+    assert.ok(roots.includes('/p/.specs/discovery'), 'must fall back to the default output folder');
   }
 });
 
@@ -561,7 +569,11 @@ test('a hostile output_folder cannot make project source writable', async () => 
 
 test('runPipeline warns when it rejects a persisted output_folder', async () => {
   await withTempDir(async (dir) => {
-    writeState(dir, { output_folder: '../outside' });
+    // Write a poisoned state file directly: writeState() sanitizes paths.
+    const { writeFileSync, mkdirSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    mkdirSync(join(dir, '.reversa'), { recursive: true });
+    writeFileSync(join(dir, '.reversa', 'state.json'), JSON.stringify({ output_folder: '../outside' }, null, 2));
 
     const result = await runPipeline({
       cwd: dir,

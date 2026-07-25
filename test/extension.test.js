@@ -178,12 +178,13 @@ test('exposes autonomous execution through the real Reversa skill', async () => 
   }
 });
 
-test('dependency contract regression: bundled CLI rejects unsupported run command', async () => {
+test('dependency contract regression: bundled CLI exposes transactional run command', async () => {
   const result = await runCli(['run']);
 
+  // `run` is a supported command; without an install it fails on preconditions, not parsing.
   assert.equal(result.code, 1);
   assert.equal(result.signal, null);
-  assert.match(result.stderr, /Comando desconhecido: "run"/);
+  assert.match(`${result.stderr}\n${result.stdout}`, /Reversa is not installed|npx reversa install/i);
 });
 
 test('reports missing skill files', async () => {
