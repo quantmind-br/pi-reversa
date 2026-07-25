@@ -5,6 +5,7 @@
       "canonicalPath": "tui-design",
       "baseCommit": "acaf4a5352b0170b13e5ef1146928b73c8e4ad5f",
       "baseTree": "37aa74e78fb95297a31595051c460b753aacc418",
+      "baseTreeHash": null,
       "dirHash": "533e92f56729638b306cb06f8d95857bd09ae9dd17a767dcd3ebb270163caa45",
       "syncedAt": "2026-07-24T19:27:05.27454147Z"
     },
@@ -12,15 +13,17 @@
       "canonicalPath": "tui-refactor",
       "baseCommit": "acaf4a5352b0170b13e5ef1146928b73c8e4ad5f",
       "baseTree": "57ef02dfc6e3aa815f8344810de7d0678fea274f",
+      "baseTreeHash": null,
       "dirHash": "01d44da805f3fc93c7d65833571fe0538cfa05f1377c18c9431d6f58bd7adf6d",
       "syncedAt": "2026-07-24T19:27:05.283508642Z"
     },
     "tui-validator": {
       "canonicalPath": "tui-validator",
-      "baseCommit": "acaf4a5352b0170b13e5ef1146928b73c8e4ad5f",
-      "baseTree": "bcc026324be2bcfb93fa4a09f4580d3e898e7c20",
-      "dirHash": "3c38ab06084b1c1eef5275e4d86f1d269b8ed54a16ba60c233172898e2f457c6",
-      "syncedAt": "2026-07-24T19:27:05.296620665Z"
+      "baseCommit": "4e39a2446ed2aadbb46661b11c6ff3fceba88f84",
+      "baseTree": "36aa2dffa4525cecb0b7c13025a50a5d2f5133a4",
+      "baseTreeHash": "4fa47d964dbca1e4d7805ea10a1163ac9b087a0250ef83f2f527495a16893f52",
+      "dirHash": "fca6f99f8f6b426594e44aca435b313cd05e19990499e542664eecd3825e1380",
+      "syncedAt": "2026-07-25T11:44:32.045693033Z"
     }
   }
 }
