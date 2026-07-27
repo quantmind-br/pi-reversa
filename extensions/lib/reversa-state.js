@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import {
   DEFAULT_SPECS_ROOT,
   defaultWorkflowFolders,
@@ -205,6 +205,87 @@ export function validateSurface(surface) {
     }
   }
   return problems;
+}
+
+/**
+ * Report how a `modules.json` deviates from the Archaeologist contract.
+ *
+ * Required fields come from
+ * `packaged-skills/reversa-archaeologist/references/modules-schema.md`.
+ *
+ * @param {Record<string, any> | null | undefined} document
+ * @returns {string[]} human-readable deviations, empty when on contract
+ */
+export function validateModulesDocument(document) {
+  if (!document || typeof document !== "object") return ["modules.json ausente ou ilegível"];
+
+  /** @type {string[]} */
+  const problems = [];
+  if (typeof document.generated_at !== "string" || document.generated_at.trim() === "") {
+    problems.push("campo obrigatório `generated_at` ausente");
+  }
+  if (!Array.isArray(document.modules) || document.modules.length === 0) {
+    problems.push("campo obrigatório `modules` ausente ou vazio");
+    return problems;
+  }
+  for (const [index, entry] of document.modules.entries()) {
+    const label =
+      typeof entry?.name === "string" && entry.name.trim() !== "" ? entry.name : `#${index}`;
+    if (!entry || typeof entry !== "object") {
+      problems.push(`módulo ${label}: entrada inválida`);
+      continue;
+    }
+    for (const field of ["name", "path", "purpose"]) {
+      if (typeof entry[field] !== "string" || entry[field].trim() === "") {
+        problems.push(`módulo ${label}: campo obrigatório \`${field}\` ausente`);
+      }
+    }
+    if (!Array.isArray(entry.primary_files) || entry.primary_files.length === 0) {
+      problems.push(`módulo ${label}: campo obrigatório \`primary_files\` ausente ou vazio`);
+    }
+    if (entry.functions !== undefined && !Array.isArray(entry.functions)) {
+      problems.push(`módulo ${label}: \`functions\` deve ser array, recebido ${typeof entry.functions}`);
+    }
+  }
+  return problems;
+}
+
+/**
+ * Promote an output the child wrote to the pipeline folder instead of its
+ * canonical `.reversa/` path. Recovery only, never the primary path: it runs
+ * after the canonical copy is already known to be missing.
+ *
+ * @param {string} cwd
+ * @param {string} folder pipeline output folder, relative to cwd
+ * @param {string} canonicalRelPath declared output path, relative to cwd
+ * @param {(parsed: any) => string[]} [validate] schema check; blocks promotion when it reports problems
+ * @param {(absolutePath: string) => string} [guard]
+ * @returns {{ recovered: boolean, from?: string, problems?: string[] }}
+ */
+export function recoverDisplacedOutput(cwd, folder, canonicalRelPath, validate, guard) {
+  if (typeof folder !== "string" || !isSafeOutputFolder(folder)) return { recovered: false };
+  if (!canonicalRelPath.startsWith(".reversa/")) return { recovered: false };
+
+  const canonical = join(resolve(cwd), canonicalRelPath);
+  const stray = join(resolve(cwd), folder, basename(canonicalRelPath));
+  if (stray === canonical) return { recovered: false };
+
+  let raw;
+  let parsed;
+  try {
+    raw = readFileSync(stray, "utf8");
+    parsed = JSON.parse(raw);
+  } catch {
+    return { recovered: false };
+  }
+
+  const problems = validate ? validate(parsed) : [];
+  if (problems.length > 0) {
+    return { recovered: false, from: `${folder}/${basename(canonicalRelPath)}`, problems };
+  }
+
+  atomicWrite(canonical, raw, guard);
+  return { recovered: true, from: `${folder}/${basename(canonicalRelPath)}` };
 }
 
 /**

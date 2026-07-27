@@ -39,6 +39,9 @@ async function loadSdk() {
  *   - `noExtensions: true` — the child cannot load pi-reversa (no recursion)
  *     nor any host extension, so host delegation tools do not exist there.
  *   - `SessionManager.inMemory` — the child never touches ~/.pi/agent/sessions.
+ *   - `noContextFiles: true` — the child's instructions come only from the
+ *     injected prompt; the analysed project's AGENTS.md/CLAUDE.md must never
+ *     override Reversa's output contract.
  *   - guarded `write`/`edit` override the builtins through `customTools`.
  *
  * @param {object} options
@@ -73,7 +76,7 @@ export async function runSubagent(
     noSkills: true,
     noPromptTemplates: true,
     noThemes: true,
-    noContextFiles: false,
+    noContextFiles: true,
   });
   await loader.reload();
 

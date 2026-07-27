@@ -33,6 +33,7 @@ import {
   normalizeSurfaceLocation,
   outputFolder,
   readSpecsSection,
+  validateModulesDocument,
   writeSpecsSection,
   writeState,
 } from '../extensions/lib/reversa-state.js';
@@ -690,6 +691,9 @@ test('runSubagent isolates the child session from the host agent', async () => {
 
   assert.equal(loaderOptions.noExtensions, true, 'child must never load extensions');
   assert.equal(loaderOptions.noSkills, true);
+  assert.equal(loaderOptions.noContextFiles, true, 'child must not inherit target-project context files');
+  assert.equal(loaderOptions.noPromptTemplates, true);
+  assert.equal(loaderOptions.noThemes, true);
 
   for (const forbidden of ['subagent', 'subagent_wait', 'bash', 'agent', 'delegate', 'task']) {
     assert.ok(!sessionOptions.tools.includes(forbidden), `child tool allowlist must exclude ${forbidden}`);
@@ -2354,5 +2358,157 @@ test('32 — accumulated tokens reach the UI while the child is still running', 
         );
       },
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stage output contract — reproduces the discovery run that lost the
+// Archaeologist to a displaced `.reversa/context/modules.json`.
+// ---------------------------------------------------------------------------
+
+test('buildStageTask injects the resolved mandatory outputs', () => {
+  const task = buildStageTask({
+    stage: { id: 'archaeologist', skill: null, label: 'Arch', task: 'analyse' },
+    state: {},
+    folder: '.specs/discovery',
+    writableRoots: ['.reversa', '.specs/discovery'],
+    outputs: ['.specs/discovery/code-analysis.md', '.reversa/context/modules.json'],
+  });
+
+  assert.match(task, /Outputs obrigatórios desta execução/);
+  assert.match(task, /\.reversa\/context\/modules\.json/);
+  assert.match(task, /Não grave cópias alternativas/);
+});
+
+test('buildStageTask omits the output contract when the stage declares none', () => {
+  const task = buildStageTask({
+    stage: { id: 'regression-check', skill: null, label: 'Reg', task: 'check' },
+    state: {},
+    folder: '.specs/discovery',
+    writableRoots: ['.reversa'],
+  });
+
+  assert.ok(!/Outputs obrigatórios desta execução/.test(task));
+});
+
+test('validateModulesDocument rejects the shape the failed run produced', () => {
+  assert.deepEqual(
+    validateModulesDocument({
+      generated_at: '2026-07-27T00:00:00Z',
+      modules: [{ name: 'auth', path: 'src/auth', purpose: 'p', primary_files: ['src/auth/a.ts'] }],
+    }),
+    [],
+  );
+
+  const problems = validateModulesDocument({
+    modules: [{ name: 'auth', path: 'src/auth', functions: 12 }],
+  });
+  assert.ok(problems.some((p) => /generated_at/.test(p)));
+  assert.ok(problems.some((p) => /purpose/.test(p)));
+  assert.ok(problems.some((p) => /primary_files/.test(p)));
+  assert.ok(problems.some((p) => /`functions` deve ser array/.test(p)));
+});
+
+const VALID_MODULES_DOC = {
+  generated_at: '2026-07-27T00:00:00Z',
+  modules: [
+    { name: 'auth', path: 'src/auth', purpose: 'authn', primary_files: ['src/auth/a.ts'] },
+  ],
+};
+
+async function runDisplacedModulesPipeline(dir, document) {
+  mkdirSync(join(dir, '.reversa', 'context'), { recursive: true });
+  writeFileSync(
+    join(dir, '.reversa', 'context', 'surface.json'),
+    JSON.stringify({ modules: ['auth'], organization_suggestion: { granularity: 'module' } }),
+  );
+
+  return withPipeline(
+    '__t_displaced',
+    {
+      label: 'displaced output',
+      stages: [
+        agentStage({
+          id: 'archaeologist',
+          skill: 'reversa-archaeologist',
+          label: 'Arch',
+          outputs: ['.reversa/context/modules.json'],
+        }),
+      ],
+    },
+    async () => {
+      const skillPath = join(dir, 'SKILL.md');
+      writeFileSync(skillPath, '---\nname: x\n---\nBody');
+      let promptSawContract = false;
+      const result = await runPipeline({
+        cwd: dir,
+        pipeline: '__t_displaced',
+        answers: {},
+        skillIndex: new Map([['reversa-archaeologist', { path: skillPath, baseDir: dir }]]),
+        runSubagent: async ({ task }) => {
+          promptSawContract = task.includes('.reversa/context/modules.json');
+          mkdirSync(join(dir, '.specs', 'discovery'), { recursive: true });
+          writeFileSync(
+            join(dir, '.specs', 'discovery', 'modules.json'),
+            JSON.stringify(document),
+          );
+          return fakeResult({ usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, total: 42 } });
+        },
+      });
+      return { result, promptSawContract };
+    },
+  );
+}
+
+test('a schema-valid displaced modules.json is promoted to its canonical path', async () => {
+  await withTempDir(async (dir) => {
+    const { result, promptSawContract } = await runDisplacedModulesPipeline(dir, VALID_MODULES_DOC);
+
+    assert.equal(promptSawContract, true, 'the child prompt must name the canonical output path');
+    const stage = result.stages.find((entry) => entry.id === 'archaeologist');
+    assert.equal(stage.status, 'done');
+    assert.equal(stage.tokens, 42);
+
+    const canonical = join(dir, '.reversa', 'context', 'modules.json');
+    assert.ok(existsSync(canonical), 'canonical modules.json must exist after recovery');
+    assert.deepEqual(JSON.parse(readFileSync(canonical, 'utf8')), VALID_MODULES_DOC);
+    assert.ok(result.warnings.some((w) => /gravado no caminho errado/.test(w)));
+  });
+});
+
+test('an off-schema displaced modules.json is refused, not promoted', async () => {
+  await withTempDir(async (dir) => {
+    const { result } = await runDisplacedModulesPipeline(dir, {
+      modules: [{ name: 'auth', path: 'src/auth', functions: 3 }],
+    });
+
+    const stage = result.stages.find((entry) => entry.id === 'archaeologist');
+    assert.equal(stage.status, 'failed');
+    assert.match(stage.reason, /outputs inválidos/);
+    assert.deepEqual(stage.outputsMissing, ['.reversa/context/modules.json']);
+    assert.equal(stage.tokens, 42);
+    assert.equal(existsSync(join(dir, '.reversa', 'context', 'modules.json')), false);
+  });
+});
+
+test('each stage leaves a JSONL event log next to its markdown transcript', async () => {
+  await withTempDir(async (dir) => {
+    await runDisplacedModulesPipeline(dir, VALID_MODULES_DOC);
+
+    const runsRoot = join(dir, '.reversa', 'runs');
+    const runId = readdirSync(runsRoot)[0];
+    const files = readdirSync(join(runsRoot, runId));
+    const jsonl = files.find((name) => name.endsWith('.jsonl'));
+    assert.ok(jsonl, `expected a .jsonl transcript, got ${files.join(', ')}`);
+    assert.ok(files.includes(jsonl.replace(/\.jsonl$/, '.md')), 'markdown transcript must remain');
+
+    const lines = readFileSync(join(runsRoot, runId, jsonl), 'utf8').trim().split('\n');
+    const first = JSON.parse(lines[0]);
+    assert.equal(first.event, 'stage_start');
+    assert.equal(first.stage, 'archaeologist');
+    assert.deepEqual(first.outputs, ['.reversa/context/modules.json']);
+    const last = JSON.parse(lines[lines.length - 1]);
+    assert.equal(last.event, 'stage_end');
+    assert.equal(last.stop_reason, 'stop');
   });
 });

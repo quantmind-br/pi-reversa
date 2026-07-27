@@ -21,8 +21,10 @@ import {
   readOrganizationSuggestion,
   readState,
   readSurface,
+  recoverDisplacedOutput,
   resolveProjectLayout,
   setActiveSpecSource,
+  validateModulesDocument,
   validateSurface,
   writeSpecsSection,
   writeState,
@@ -244,6 +246,7 @@ export function buildStageTask({
   writableRoots,
   skillsDir,
   codeIntelAvailable = false,
+  outputs = [],
 }) {
   const sections = [];
 
@@ -281,6 +284,13 @@ export function buildStageTask({
       "- Você não tem `bash`. Para histórico de git use a ferramenta `reversa_git`.",
       ...codeIntelLines,
       `- Escreva APENAS em ${(writableRoots ?? [".reversa", folder]).map((root) => (root.endsWith(".md") ? root : `${root}/`)).join(", ")}. Escritas fora disso falham por design.`,
+      ...(outputs.length > 0
+        ? [
+            `- Outputs obrigatórios desta execução (caminhos exatos, relativos à raiz do projeto): ${outputs.join(", ")}.`,
+            "- A etapa só é considerada concluída quando esses arquivos existem nesses caminhos exatos e não estão vazios. Citar o arquivo no resumo final não substitui gravá-lo.",
+            "- Não grave cópias alternativas desses outputs em outra pasta. Um output em `.reversa/context/` nunca deve ir para a pasta de specs.",
+          ]
+        : []),
       ...(folder !== specsRoot
         ? [
             `- Caminhos legados: o corpo do skill cita \`${specsRoot}/<resto>\`. Reescreva cada um para \`${folder}/<resto>\` antes de escrever. Exceção: \`surface.json\` é sempre \`.reversa/context/surface.json\`, nunca dentro de \`${folder}\`.`,
@@ -842,6 +852,9 @@ async function runPipelineLocked({
       const stagePipeline = stage.requires === "regression-watch" ? "regression-check" : pipeline;
       const stageRoots = stagePipeline === pipeline ? roots : sandboxRoots(cwd, state, stagePipeline, state);
       const stageRootNames = stageRoots.map((root) => relative(resolve(cwd), root) || ".");
+      // One binding feeds both the prompt and the post-run validation, so the
+      // contract the child is told cannot drift from the contract it is judged by.
+      const expected = resolveStageOutputs(stage, { folder, item: run.module ?? run.unit });
       const task = buildStageTask({
         stage,
         module: run.module,
@@ -852,7 +865,37 @@ async function runPipelineLocked({
         writableRoots: stageRootNames,
         skillsDir,
         codeIntelAvailable: Boolean(codeIntel?.available),
+        outputs: expected,
       });
+
+      /** Machine-readable stage evidence; `result.text` is a model-authored summary. @type {string[]} */
+      const eventLog = [];
+      const logEvent = (payload) => {
+        eventLog.push(JSON.stringify({ ts: new Date().toISOString(), ...payload }));
+      };
+      const flushEventLog = () => {
+        try {
+          writeFileSync(
+            guard(join(runDir, `${run.key.replace(/[/:]/g, "_")}.jsonl`)),
+            eventLog.length > 0 ? `${eventLog.join("\n")}\n` : "",
+            "utf8",
+          );
+        } catch {
+          /* a logging failure must never mask the stage outcome */
+        }
+      };
+      logEvent({
+        event: "stage_start",
+        stage: stage.id,
+        run: run.key,
+        model: stageModelLabels[stage.id] ?? null,
+        outputs: expected,
+      });
+      const recordEvent = (event) => {
+        if (event.type === "tool_execution_start") logEvent({ event: "tool_start", tool: event.name });
+        else if (event.type === "message_end") logEvent({ event: "message_end", tokens: event.tokens ?? 0 });
+        onEvent?.(event);
+      };
 
       try {
         const result = await runSubagent({
@@ -865,7 +908,7 @@ async function runPipelineLocked({
           thinkingLevel,
           allowedRoots: stageRoots,
           signal,
-          onEvent,
+          onEvent: recordEvent,
           codeIntelSession: codeIntel,
         });
 
@@ -874,6 +917,14 @@ async function runPipelineLocked({
           `# ${label}\n\n${result.text}\n`,
           "utf8",
         );
+        logEvent({
+          event: "stage_end",
+          stop_reason: result.stopReason,
+          error: result.errorMessage ?? null,
+          usage: result.usage ?? null,
+          violations: (result.violations ?? []).map((violation) => violation.message),
+        });
+        flushEventLog();
 
         usage.input += result.usage?.input ?? 0;
         usage.output += result.usage?.output ?? 0;
@@ -890,35 +941,85 @@ async function runPipelineLocked({
             label,
             status: "failed",
             reason: `sandbox: ${result.violations[0].message}`,
+            tokens: result.usage?.total ?? 0,
           };
         }
 
         if (result.stopReason === "error") {
           warnings.push(`${label} terminou com erro: ${result.errorMessage ?? "desconhecido"}`);
-          return { id: run.key, label, status: "failed", reason: result.errorMessage ?? "erro" };
-        }
-        if (result.stopReason === "aborted") {
-          aborted = true;
-          fanOutStopped = true;
-          return { id: run.key, label, status: "failed", reason: "abortado" };
-        }
-
-        const expected = resolveStageOutputs(stage, { folder, item: run.module ?? run.unit });
-        const missing = missingStageOutputs(cwd, expected);
-        if (missing.length > 0) {
-          warnings.push(`${label}: outputs ausentes — ${missing.join(", ")}`);
           return {
             id: run.key,
             label,
             status: "failed",
-            reason: `outputs ausentes: ${missing.join(", ")}`,
-            outputsMissing: missing,
+            reason: result.errorMessage ?? "erro",
+            tokens: result.usage?.total ?? 0,
           };
+        }
+        if (result.stopReason === "aborted") {
+          aborted = true;
+          fanOutStopped = true;
+          return {
+            id: run.key,
+            label,
+            status: "failed",
+            reason: "abortado",
+            tokens: result.usage?.total ?? 0,
+          };
+        }
+
+        const missing = missingStageOutputs(cwd, expected);
+        if (missing.length > 0) {
+          // Recovery only: the canonical copy is already known to be missing.
+          /** @type {string[]} */
+          const stillMissing = [];
+          /** @type {string[]} */
+          const schemaProblems = [];
+          for (const relPath of missing) {
+            const validator =
+              relPath === ".reversa/context/modules.json" ? validateModulesDocument : undefined;
+            const outcome = recoverDisplacedOutput(cwd, folder, relPath, validator, guard);
+            if (outcome.recovered) {
+              warnings.push(
+                `${label}: \`${outcome.from}\` gravado no caminho errado; cópia canônica criada em \`${relPath}\`.`,
+              );
+              continue;
+            }
+            if (outcome.problems?.length) {
+              schemaProblems.push(
+                `${outcome.from} não satisfaz o schema (${outcome.problems.slice(0, 5).join("; ")})`,
+              );
+            }
+            stillMissing.push(relPath);
+          }
+
+          if (stillMissing.length > 0) {
+            for (const problem of schemaProblems) warnings.push(`${label}: ${problem}`);
+            warnings.push(`${label}: outputs ausentes — ${stillMissing.join(", ")}`);
+            return {
+              id: run.key,
+              label,
+              status: "failed",
+              reason:
+                schemaProblems.length > 0
+                  ? `outputs inválidos: ${schemaProblems.join(" | ")}`
+                  : `outputs ausentes: ${stillMissing.join(", ")}`,
+              outputsMissing: stillMissing,
+              tokens: result.usage?.total ?? 0,
+            };
+          }
         }
 
         completed.add(run.key);
         return { id: run.key, label, status: "done", tokens: result.usage?.total ?? 0 };
       } catch (error) {
+        logEvent({
+          event: "stage_end",
+          stop_reason: "throw",
+          error: error instanceof Error ? error.message : String(error),
+          usage: null,
+          violations: [],
+        });
+        flushEventLog();
         if (error instanceof WriteOutsideSandboxError) {
           sandboxViolation = error;
           fanOutStopped = true;
@@ -1174,6 +1275,7 @@ async function runPipelineLocked({
             status: stage.status,
             reason: stage.reason,
             outputs_missing: stage.outputsMissing ?? [],
+            tokens: stage.tokens ?? 0,
           })),
           warnings,
           usage,

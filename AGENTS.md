@@ -88,7 +88,7 @@ The `reversa_code_intel` tool is available to both host and child sessions (same
 |`scripts/`|`prepare-skills.js` — copies Reversa agents + workflow into `packaged-skills/` and `extensions/generated/`|
 |`packaged-skills/`|**Generated, gitignored.** What `package.json` `pi.skills` points at and what ships in the npm package (~50 Reversa skills)|
 |`skills/`|Dev symlink → `../reversa/agents` (sibling checkout). Not the published skill tree|
-|`test/`|Node native tests using `node:test` + `node:assert/strict` (~116 tests across 5 files)|
+|`test/`|Node native tests using `node:test` + `node:assert/strict` (~125 tests across 5 files)|
 |`.agents/skills/`|Maintainer TUI skills (`tui-design`, `tui-refactor`, `tui-validator`); tracked by `skills-lock.json` + `shotgun-cli` (`.sm/lock.json`). Not part of the npm package|
 |`.claude/skills/`|Synced copy of `.agents/skills/`|
 
@@ -158,7 +158,7 @@ Recommended companion for `/reversa-auto` interviews: `pi install npm:@juiceshar
 ## Testing & QA
 
 - Runner: Node built-in `node:test` + `node:assert/strict`.
-- Files: `test/extension.test.js` (~23 tests), `test/isolation.test.js` (3 tests), `test/orchestrator.test.js` (~72 tests), `test/code-intel.test.js` (~7 tests), `test/stage-models.test.js` (~11 tests). Total: ~116 tests.
+- Files: `test/extension.test.js` (~23 tests), `test/isolation.test.js` (3 tests), `test/orchestrator.test.js` (~81 tests), `test/code-intel.test.js` (~7 tests), `test/stage-models.test.js` (~11 tests). Total: ~125 tests.
 - Pattern: `mkdtempSync` / `withTempDir`, hand-rolled Pi harness mocks (`createHarness`), no Jest/Mocha/Vitest.
 - Key mock patterns:
   - `createHarness` — mocks Pi host API (command registration, tool registry, event handlers, notifications)
