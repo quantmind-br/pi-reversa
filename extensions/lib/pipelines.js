@@ -20,6 +20,7 @@
  *   args         optional skill args for unattended modes
  *   outputs      declared artifacts; supports {{output_folder}} and {{item}}
  *   condition    surface.automation_signals flag that must be detected to run
+ *   role         "review" when the stage reviews/audits produced artifacts; null otherwise
  */
 
 /**
@@ -38,6 +39,7 @@
  *   handler?: string,
  *   args?: string,
  *   phase?: string,
+ *   role?: "review",
  *   outputs?: string[],
  *   condition?: string,
  * }} Stage
@@ -154,6 +156,7 @@ export const PIPELINES = {
         optional: true,
         dependsOn: ["screen-translator-generation"],
         failPipeline: false,
+        role: "review",
         task: "Inspecione os artefatos de migração e gere o handoff.",
       },
       {
@@ -259,3 +262,23 @@ export const PIPELINES = {
 
 /** Pipeline ids exposed to the LLM. */
 export const PIPELINE_IDS = Object.keys(PIPELINES);
+
+/**
+ * A stage whose job is to review/audit artifacts produced upstream.
+ *
+ * @param {Stage} stage
+ * @returns {boolean}
+ */
+export const isReviewStage = (stage) => stage?.role === "review";
+
+/**
+ * Agent review stages of a pipeline, in declaration order. Controller stages
+ * never run a model, so they can never belong to the group.
+ *
+ * @param {string} pipeline
+ * @returns {Stage[]}
+ */
+export const reviewStages = (pipeline) =>
+  (PIPELINES[pipeline]?.stages ?? []).filter(
+    (stage) => (stage.kind ?? "agent") !== "controller" && isReviewStage(stage),
+  );

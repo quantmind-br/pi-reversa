@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 import { Type } from "typebox";
 import { buildLauncherPrompt, parsePipelineArg } from "./lib/interview.js";
 import { DEFAULT_FANOUT_CONCURRENCY, runPipeline } from "./lib/orchestrator.js";
-import { PIPELINE_IDS, PIPELINES } from "./lib/pipelines.js";
+import { isReviewStage, PIPELINE_IDS, PIPELINES, reviewStages } from "./lib/pipelines.js";
 import { readSpecsSection, readState } from "./lib/reversa-state.js";
 import {
   countStageOverrides,
@@ -382,7 +382,8 @@ export function createReversaPiExtension(deps = {}) {
     /**
      * @param {import("./lib/stage-models.js").StageModelConfig} config
      * @param {string} pipeline
-     * @param {string} key stage id, or `default` for the pipeline default
+     * @param {string} key stage id, `default` for the pipeline default, or
+     *   `review` for the pipeline review group
      * @param {string | null} ref
      */
     const setStageModelEntry = (config, pipeline, key, ref) => {
@@ -394,8 +395,9 @@ export function createReversaPiExtension(deps = {}) {
     };
 
     /**
-     * Three-level picker: pipeline → stage → model. Every change is persisted
-     * immediately, so an ESC out of the loop never loses an earlier choice.
+     * Three-level picker: pipeline → stage (or the `review` group) → model.
+     * Every change is persisted immediately, so an ESC out of the loop never
+     * loses an earlier choice.
      *
      * @param {string} cwd
      * @param {import("./lib/stage-models.js").StageModelConfig} config
@@ -414,13 +416,18 @@ export function createReversaPiExtension(deps = {}) {
 
       for (;;) {
         if (pipeline === null) {
-          /** @type {Map<string, { kind: "global" } | { kind: "pipeline", id: string }>} */
+          /** @type {Map<string, { kind: "global" } | { kind: "review" } | { kind: "pipeline", id: string }>} */
           const actions = new Map();
           const globalLabel = `Global default — ${config.default ?? "session model"}`;
           actions.set(globalLabel, { kind: "global" });
           const options = [globalLabel];
+          const reviewLabel = `Review stages default — ${config.review ?? "global default"}`;
+          actions.set(reviewLabel, { kind: "review" });
+          options.push(reviewLabel);
           for (const id of PIPELINE_IDS) {
-            const label = `${id} — ${countStageOverrides(config, id)} stage override(s)`;
+            const reviewRef = config.pipelines[id]?.review;
+            const suffix = reviewRef ? `, review ${reviewRef}` : "";
+            const label = `${id} — ${countStageOverrides(config, id)} stage override(s)${suffix}`;
             actions.set(label, { kind: "pipeline", id });
             options.push(label);
           }
@@ -430,6 +437,7 @@ export function createReversaPiExtension(deps = {}) {
           if (choice === undefined || choice === "Close") return;
           if (choice === "Clear all") {
             config.default = null;
+            config.review = null;
             config.pipelines = {};
             writeStageModels(cwd, config);
             report("per-stage models cleared");
@@ -440,6 +448,14 @@ export function createReversaPiExtension(deps = {}) {
           if (!action) continue;
           if (action.kind === "pipeline") {
             pipeline = action.id;
+            continue;
+          }
+          if (action.kind === "review") {
+            const picked = await pickStageModel(commandCtx, available, "review stages (all pipelines)");
+            if (picked.cancelled) continue;
+            config.review = picked.ref;
+            writeStageModels(cwd, config);
+            report(`review stages default: ${picked.ref ?? "global default"}`);
             continue;
           }
 
@@ -457,11 +473,18 @@ export function createReversaPiExtension(deps = {}) {
         const defaultLabel = `Pipeline default — ${table.default ?? "inherit"}`;
         actions.set(defaultLabel, "default");
         const options = ["← Back", defaultLabel];
+        const pipelineReviewStages = reviewStages(pipeline);
+        if (pipelineReviewStages.length > 0) {
+          const reviewLabel = `Review stages (${pipelineReviewStages.length}) — ${table.review ?? "inherit"}`;
+          actions.set(reviewLabel, "review");
+          options.push(reviewLabel);
+        }
         // Keyed on `stage.id`, not `stage.skill`: discovery reuses one skill
         // across several stages, and each must stay independently configurable.
         for (const stage of PIPELINES[pipeline].stages) {
           if ((stage.kind ?? "agent") !== "agent") continue;
-          const label = `${stage.id} — ${stage.label} — ${table[stage.id] ?? "inherit"}`;
+          const inherited = isReviewStage(stage) && table.review ? `review: ${table.review}` : "inherit";
+          const label = `${stage.id} — ${stage.label} — ${table[stage.id] ?? inherited}`;
           actions.set(label, stage.id);
           options.push(label);
         }
@@ -474,7 +497,8 @@ export function createReversaPiExtension(deps = {}) {
 
         const key = actions.get(choice);
         if (!key) continue;
-        const picked = await pickStageModel(commandCtx, available, `${pipeline}/${key}`);
+        const scope = key === "review" ? `${pipeline}/review stages` : `${pipeline}/${key}`;
+        const picked = await pickStageModel(commandCtx, available, scope);
         if (picked.cancelled) continue;
         setStageModelEntry(config, pipeline, key, picked.ref);
         writeStageModels(cwd, config);
@@ -492,7 +516,7 @@ export function createReversaPiExtension(deps = {}) {
       }
 
       pi.registerCommand(MODELS_COMMAND, {
-        description: "Pick a model per pipeline stage",
+        description: "Pick a model per stage or review group",
         handler: async (args, commandCtx) => {
           const cwd = commandCtx.cwd ?? process.cwd();
           const action = String(args ?? "").trim().split(/\s+/)[0]?.toLowerCase() ?? "";
@@ -504,7 +528,7 @@ export function createReversaPiExtension(deps = {}) {
 
           try {
             if (action === "reset") {
-              writeStageModels(cwd, { default: null, pipelines: {} });
+              writeStageModels(cwd, { default: null, review: null, pipelines: {} });
               report("per-stage models cleared");
               return;
             }
@@ -516,7 +540,10 @@ export function createReversaPiExtension(deps = {}) {
                 return;
               }
               const overrides = PIPELINE_IDS.reduce((sum, id) => sum + countStageOverrides(config, id), 0);
-              report(`per-stage models: ${overrides} override(s), global default ${config.default ?? "session model"}`);
+              const reviewSuffix = config.review ? `, review default ${config.review}` : "";
+              report(
+                `per-stage models: ${overrides} override(s), global default ${config.default ?? "session model"}${reviewSuffix}`,
+              );
               return;
             }
 

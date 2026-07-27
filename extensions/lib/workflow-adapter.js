@@ -27,6 +27,23 @@ function labelFor(id) {
 }
 
 /**
+ * Discovery tasks that review rather than produce. The upstream workflow
+ * carries no phase metadata (tasks only declare id/kind/skill/args/outputs/
+ * condition/expand), so the `role: "review"` marker of the `Stage` typedef is
+ * derived here: the reviewer/auditor/adjudicator skills, plus `regression-check`,
+ * which re-verifies existing specs through the generic `reversa` router skill.
+ */
+const REVIEW_SKILLS = new Set([
+  "reversa-reviewer",
+  "reversa-coverage-reviewer",
+  "reversa-domain-reviewer",
+  "reversa-consistency-reviewer",
+  "reversa-evidence-auditor",
+  "reversa-adjudicator",
+]);
+const REVIEW_TASK_IDS = new Set(["regression-check"]);
+
+/**
  * Convert one upstream workflow task into a pi-reversa stage.
  *
  * The upstream workflow is a flat ordered list: it declares no dependency
@@ -56,6 +73,10 @@ export function adaptWorkflowTask(task) {
   if (isController) {
     stage.kind = "controller";
     stage.handler = task.handler;
+  }
+
+  if (!isController && (REVIEW_SKILLS.has(stage.skill) || REVIEW_TASK_IDS.has(id))) {
+    stage.role = "review";
   }
 
   if (task.condition) {

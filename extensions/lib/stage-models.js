@@ -10,13 +10,25 @@
 
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { PIPELINE_IDS, PIPELINES } from "./pipelines.js";
+import { isReviewStage, PIPELINE_IDS, PIPELINES } from "./pipelines.js";
 import { atomicWrite } from "./reversa-state.js";
 
 const CONFIG_PATH = [".reversa", "config.toml"];
 
 /**
- * @typedef {{ default: string | null, pipelines: Record<string, Record<string, string>> }} StageModelConfig
+ * Keys inside `[models]` / `[models.<pipeline>]` that address a group, not a
+ * stage id. They are excluded from stage-override counts and from the
+ * unknown-key warning, and they serialize before the stage entries in this
+ * order.
+ */
+const GROUP_KEYS = ["default", "review"];
+const isGroupKey = (key) => GROUP_KEYS.includes(key);
+
+/**
+ * `review` applies to every stage tagged `role: "review"` and is more specific
+ * than `default` at the same level.
+ *
+ * @typedef {{ default: string | null, review: string | null, pipelines: Record<string, Record<string, string>> }} StageModelConfig
  */
 
 /**
@@ -27,10 +39,14 @@ const CONFIG_PATH = [".reversa", "config.toml"];
  * name (`__proto__`, `constructor`, `toString`) would otherwise turn a lookup
  * or an assignment into a global mutation.
  */
-export const EMPTY_STAGE_MODELS = Object.freeze({ default: null, pipelines: Object.freeze(Object.create(null)) });
+export const EMPTY_STAGE_MODELS = Object.freeze({
+  default: null,
+  review: null,
+  pipelines: Object.freeze(Object.create(null)),
+});
 
 /** @returns {StageModelConfig} */
-const emptyConfig = () => ({ default: null, pipelines: Object.create(null) });
+const emptyConfig = () => ({ default: null, review: null, pipelines: Object.create(null) });
 
 /** @param {string} cwd */
 const configPathIn = (cwd) => join(resolve(cwd), ...CONFIG_PATH);
@@ -132,6 +148,7 @@ export function readStageModels(cwd) {
 
     if (pipeline === null) {
       if (key === "default") config.default = value;
+      else if (key === "review") config.review = value;
       continue;
     }
     if (!isSafeKey(pipeline) || !isSafeKey(key)) continue;
@@ -149,7 +166,10 @@ export function readStageModels(cwd) {
  */
 function serializeStageModels(config) {
   const lines = [];
-  if (config.default) lines.push("[models]", `default = ${JSON.stringify(config.default)}`);
+  const globals = [];
+  if (config.default) globals.push(`default = ${JSON.stringify(config.default)}`);
+  if (config.review) globals.push(`review = ${JSON.stringify(config.review)}`);
+  if (globals.length) lines.push("[models]", ...globals);
 
   const declared = Object.keys(config.pipelines).filter(isSafeKey);
   const names = [
@@ -164,9 +184,9 @@ function serializeStageModels(config) {
 
     const stageOrder = (PIPELINES[pipeline]?.stages ?? []).map((stage) => stage.id);
     const ordered = [
-      ...(keys.includes("default") ? ["default"] : []),
+      ...GROUP_KEYS.filter((key) => keys.includes(key)),
       ...stageOrder.filter((id) => keys.includes(id)),
-      ...keys.filter((key) => key !== "default" && !stageOrder.includes(key)),
+      ...keys.filter((key) => !isGroupKey(key) && !stageOrder.includes(key)),
     ];
 
     if (lines.length) lines.push("");
@@ -220,7 +240,9 @@ export function writeStageModels(cwd, config, guard) {
 
 /**
  * Resolve one model per agent stage, applying the precedence
- * stage → pipeline default → global default → session model.
+ * stage → pipeline review → pipeline default → global review → global default
+ * → session model. The `review` tiers only apply to stages tagged
+ * `role: "review"`.
  *
  * Controller stages never run a model and are excluded. An unresolvable
  * reference degrades to the session model with a warning; it never fails.
@@ -242,7 +264,9 @@ export function resolveStageModels({ config, pipeline, stages, registry }) {
 
   const perPipeline = ownValue(config?.pipelines, pipeline) ?? {};
   const globalDefault = config?.default ?? null;
-  const hasEntries = Boolean(globalDefault) || Object.keys(perPipeline).length > 0;
+  const globalReview = config?.review ?? null;
+  const hasEntries =
+    Boolean(globalDefault) || Boolean(globalReview) || Object.keys(perPipeline).length > 0;
   if (!hasEntries) return { models, labels, warnings };
 
   if (!registry) {
@@ -254,12 +278,25 @@ export function resolveStageModels({ config, pipeline, stages, registry }) {
   const knownIds = new Set(agentStages.map((stage) => stage.id));
 
   for (const key of Object.keys(perPipeline)) {
-    if (key === "default" || knownIds.has(key)) continue;
+    if (isGroupKey(key) || knownIds.has(key)) continue;
     warnings.push(`etapa \`${key}\` não existe no pipeline \`${pipeline}\`; entrada de modelo ignorada.`);
   }
 
+  // Reachable by hand-editing the TOML; the picker hides the entry for a
+  // pipeline without review stages.
+  const reviewIds = agentStages.filter(isReviewStage).map((stage) => stage.id);
+  if (ownValue(perPipeline, "review") && reviewIds.length === 0) {
+    warnings.push(`pipeline \`${pipeline}\` não tem etapas de revisão; entrada \`review\` ignorada.`);
+  }
+
   for (const stage of agentStages) {
-    const ref = ownValue(perPipeline, stage.id) ?? ownValue(perPipeline, "default") ?? globalDefault;
+    const review = isReviewStage(stage);
+    const ref =
+      ownValue(perPipeline, stage.id) ??
+      (review ? ownValue(perPipeline, "review") : undefined) ??
+      ownValue(perPipeline, "default") ??
+      (review ? globalReview : null) ??
+      globalDefault;
     if (!ref) continue;
 
     const parsed = parseModelRef(ref);
@@ -277,7 +314,7 @@ export function resolveStageModels({ config, pipeline, stages, registry }) {
 }
 
 /**
- * Count stage-level overrides for a pipeline, excluding the `default` key.
+ * Count stage-level overrides for a pipeline, excluding the group keys.
  *
  * @param {StageModelConfig} config
  * @param {string} pipeline
@@ -286,5 +323,5 @@ export function resolveStageModels({ config, pipeline, stages, registry }) {
 export function countStageOverrides(config, pipeline) {
   const entries = ownValue(config?.pipelines, pipeline);
   if (!entries) return 0;
-  return Object.keys(entries).filter((key) => key !== "default").length;
+  return Object.keys(entries).filter((key) => !isGroupKey(key)).length;
 }

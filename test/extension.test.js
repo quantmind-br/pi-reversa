@@ -5,6 +5,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+import { readStageModels } from '../extensions/lib/stage-models.js';
+
 
 async function loadModule() {
   return import(`${new URL('../extensions/reversa.js', import.meta.url).href}?test=${Date.now()}-${Math.random()}`);
@@ -684,7 +686,7 @@ test('/reversa-models show is headless-safe and reset clears the config', async 
     // Headless: any invocation renders JSON instead of opening a picker.
     await command.handler('', { cwd: dir, hasUI: false, ui: {} });
     assert.equal(logged.length, 1);
-    assert.deepEqual(JSON.parse(logged[0][0]), { default: null, pipelines: {} });
+    assert.deepEqual(JSON.parse(logged[0][0]), { default: null, review: null, pipelines: {} });
 
     writeFileSync(join(dir, '.reversa', 'config.toml'), '[specs]\ngranularity = "module"\n\n[models]\ndefault = "a/x"\n');
     await command.handler('reset', uiCtx);
@@ -692,6 +694,114 @@ test('/reversa-models show is headless-safe and reset clears the config', async 
     assert.deepEqual(notifications[1], ['per-stage models cleared', 'info']);
   } finally {
     console.log = originalLog;
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('/reversa-models sets one model for every review stage of a pipeline', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'reversa-pi-models-'));
+  try {
+    const harness = createHarness([]);
+    const extension = await loadExtension();
+    extension(harness.pi);
+    await harness.handlers.get('session_start')({ reason: 'startup' }, {});
+
+    const command = harness.registered.get('reversa-models');
+    const scripted = scriptedUI([
+      'discovery — 0 stage override(s)',
+      'Review stages (9) — inherit',
+      'anthropic/opus — Opus',
+      '← Back',
+      'Close',
+    ]);
+
+    await command.handler('', {
+      cwd: dir,
+      hasUI: true,
+      ui: scripted.ui,
+      modelRegistry: {
+        getAvailable: () => [{ provider: 'anthropic', id: 'opus', name: 'Opus' }],
+        find: (provider, id) => ({ provider, id, name: 'Opus' }),
+      },
+    });
+
+    const config = readFileSync(join(dir, '.reversa', 'config.toml'), 'utf8');
+    assert.match(config, /\[models\.discovery\]\nreview = "anthropic\/opus"/);
+
+    // The group is one pick, but every review stage must read as covered by it
+    // while the producing stages stay untouched.
+    assert.ok(scripted.seen[3].options.includes('review-structural — Review Structural — review: anthropic/opus'));
+    assert.ok(scripted.seen[3].options.includes('scout — Scout — inherit'));
+    assert.ok(scripted.seen[4].options.includes('discovery — 0 stage override(s), review anthropic/opus'));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the docs pipeline offers no review group', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'reversa-pi-models-'));
+  try {
+    const harness = createHarness([]);
+    const extension = await loadExtension();
+    extension(harness.pi);
+    await harness.handlers.get('session_start')({ reason: 'startup' }, {});
+
+    const command = harness.registered.get('reversa-models');
+    const scripted = scriptedUI(['docs — 0 stage override(s)', '← Back', 'Close']);
+
+    await command.handler('', {
+      cwd: dir,
+      hasUI: true,
+      ui: scripted.ui,
+      modelRegistry: {
+        getAvailable: () => [{ provider: 'anthropic', id: 'opus', name: 'Opus' }],
+        find: (provider, id) => ({ provider, id, name: 'Opus' }),
+      },
+    });
+
+    assert.equal(scripted.seen[1].title, 'Reversa models — docs');
+    assert.ok(
+      !scripted.seen[1].options.some((option) => option.startsWith('Review stages (')),
+      'docs has no reviewing stage, so the group must stay hidden',
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('/reversa-models sets a global review default', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'reversa-pi-models-'));
+  try {
+    const harness = createHarness([]);
+    const extension = await loadExtension();
+    extension(harness.pi);
+    await harness.handlers.get('session_start')({ reason: 'startup' }, {});
+
+    const command = harness.registered.get('reversa-models');
+    const scripted = scriptedUI([
+      'Review stages default — global default',
+      'anthropic/opus — Opus',
+      'Close',
+    ]);
+    const ctx = {
+      cwd: dir,
+      hasUI: true,
+      ui: scripted.ui,
+      modelRegistry: {
+        getAvailable: () => [{ provider: 'anthropic', id: 'opus', name: 'Opus' }],
+        find: (provider, id) => ({ provider, id, name: 'Opus' }),
+      },
+    };
+
+    await command.handler('', ctx);
+    assert.match(readFileSync(join(dir, '.reversa', 'config.toml'), 'utf8'), /\[models\]\nreview = "anthropic\/opus"/);
+
+    await command.handler('reset', ctx);
+    assert.deepEqual(
+      JSON.parse(JSON.stringify(readStageModels(dir))),
+      { default: null, review: null, pipelines: {} },
+    );
+  } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });

@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-import { PIPELINES } from '../extensions/lib/pipelines.js';
+import { PIPELINES, reviewStages } from '../extensions/lib/pipelines.js';
 import {
   countStageOverrides,
   formatModelRef,
@@ -62,6 +62,7 @@ test('writeStageModels round-trips without touching other config sections', asyn
 
     assertConfig(readStageModels(dir), {
       default: 'anthropic/claude-sonnet-4-5',
+      review: null,
       pipelines: { discovery: { 'review-structural': 'anthropic/claude-opus-4-5' } },
     });
 
@@ -75,16 +76,16 @@ test('writeStageModels round-trips without touching other config sections', asyn
     // Emptying everything leaves only the untouched sections.
     writeStageModels(dir, { default: null, pipelines: {} });
     assert.equal(readFileSync(configPath, 'utf8'), '[specs]\ngranularity = "module"\n');
-    assertConfig(readStageModels(dir), { default: null, pipelines: {} });
+    assertConfig(readStageModels(dir), { default: null, review: null, pipelines: {} });
   });
 });
 
 test('readStageModels on a missing file yields a fresh empty config', async () => {
   await withTempDir((dir) => {
     const first = readStageModels(dir);
-    assertConfig(first, { default: null, pipelines: {} });
+    assertConfig(first, { default: null, review: null, pipelines: {} });
     first.pipelines.discovery = { scout: 'a/b' };
-    assertConfig(readStageModels(dir), { default: null, pipelines: {} }, 'must not share mutable state');
+    assertConfig(readStageModels(dir), { default: null, review: null, pipelines: {} }, 'must not share mutable state');
   });
 });
 
@@ -111,6 +112,7 @@ test('readStageModels drops entries that are not model references', async () => 
 
     assertConfig(readStageModels(dir), {
       default: 'anthropic/opus',
+      review: null,
       pipelines: { discovery: { scout: 'openrouter/openai/gpt-5' } },
     });
   });
@@ -193,10 +195,117 @@ test('resolveStageModels without a registry is warning-only and never throws', (
   assert.deepEqual(empty, { models: {}, labels: {}, warnings: [] }, 'no config means no noise');
 });
 
-test('countStageOverrides excludes the pipeline default key', () => {
-  const config = { default: null, pipelines: { discovery: { default: 'a/x', scout: 'b/y', writer: 'c/z' } } };
+test('countStageOverrides excludes the group keys', () => {
+  const config = {
+    default: null,
+    pipelines: { discovery: { default: 'a/x', review: 'r/r', scout: 'b/y', writer: 'c/z' } },
+  };
   assert.equal(countStageOverrides(config, 'discovery'), 2);
   assert.equal(countStageOverrides(config, 'migrate'), 0);
+});
+
+test('review stages are tagged in every pipeline', () => {
+  // Hardcoded on purpose: an upstream workflow change must force a maintainer
+  // decision instead of silently reshaping the group.
+  assert.deepEqual(reviewStages('discovery').map((stage) => stage.id), [
+    'evidence-audit-initial',
+    'review-structural',
+    'review-adversarial',
+    'review-coverage',
+    'review-domain',
+    'review-consistency',
+    'adjudicate',
+    'evidence-audit-final',
+    'regression-check',
+  ]);
+  assert.deepEqual(reviewStages('migrate').map((stage) => stage.id), ['inspector']);
+  assert.deepEqual(reviewStages('docs'), []);
+});
+
+test('no stage id collides with a reserved group key', () => {
+  for (const [pipeline, { stages }] of Object.entries(PIPELINES)) {
+    for (const stage of stages) {
+      assert.ok(
+        stage.id !== 'default' && stage.id !== 'review',
+        `${pipeline}/${stage.id} shadows a reserved group key`,
+      );
+    }
+  }
+});
+
+test('resolveStageModels applies stage > pipeline review > pipeline default > global review > global default', () => {
+  const scoped = resolveStageModels({
+    config: {
+      default: 'g/def',
+      review: 'g/rev',
+      pipelines: { discovery: { default: 'p/def', review: 'p/rev', 'review-structural': 's/own' } },
+    },
+    pipeline: 'discovery',
+    stages: PIPELINES.discovery.stages,
+    registry: echoRegistry,
+  });
+
+  assert.equal(scoped.labels['review-structural'], 's/own');
+  assert.equal(scoped.labels.adjudicate, 'p/rev');
+  assert.equal(scoped.labels['regression-check'], 'p/rev');
+  assert.equal(scoped.labels.scout, 'p/def');
+  assert.deepEqual(scoped.warnings, []);
+
+  // Without a pipeline table, the global group key still beats the global default.
+  const global = resolveStageModels({
+    config: { default: 'g/def', review: 'g/rev', pipelines: {} },
+    pipeline: 'discovery',
+    stages: PIPELINES.discovery.stages,
+    registry: echoRegistry,
+  });
+  assert.equal(global.labels.adjudicate, 'g/rev');
+  assert.equal(global.labels.scout, 'g/def');
+});
+
+test('a review key on a pipeline without review stages warns instead of silently doing nothing', () => {
+  const resolved = resolveStageModels({
+    config: { default: null, review: null, pipelines: { docs: { review: 'a/x' } } },
+    pipeline: 'docs',
+    stages: PIPELINES.docs.stages,
+    registry: echoRegistry,
+  });
+
+  assert.equal(resolved.warnings.length, 1);
+  assert.match(resolved.warnings[0], /docs/);
+  assert.match(resolved.warnings[0], /review/);
+  assert.deepEqual(resolved.labels, {});
+});
+
+test('the review group is not reported as an unknown stage key', () => {
+  const resolved = resolveStageModels({
+    config: { default: null, review: null, pipelines: { discovery: { review: 'a/x' } } },
+    pipeline: 'discovery',
+    stages: PIPELINES.discovery.stages,
+    registry: echoRegistry,
+  });
+
+  assert.deepEqual(resolved.warnings, []);
+  assert.equal(resolved.labels.adjudicate, 'a/x');
+});
+
+test('writeStageModels serializes group keys before stage keys', async () => {
+  await withTempDir((dir) => {
+    writeStageModels(dir, {
+      default: 'a/x',
+      review: 'b/y',
+      pipelines: { discovery: { scout: 'c/z', review: 'd/w', default: 'e/v' } },
+    });
+
+    const written = readFileSync(join(dir, '.reversa', 'config.toml'), 'utf8');
+    assert.match(written, /\[models\]\ndefault = "a\/x"\nreview = "b\/y"/);
+    assert.match(written, /\[models\.discovery\]\ndefault = "e\/v"\nreview = "d\/w"\nscout = "c\/z"/);
+
+    assertConfig(readStageModels(dir), {
+      default: 'a/x',
+      review: 'b/y',
+      pipelines: { discovery: { default: 'e/v', review: 'd/w', scout: 'c/z' } },
+    });
+  });
 });
 
 test('inherited section and stage names never mutate Object.prototype', async () => {
@@ -244,7 +353,7 @@ test('inherited section and stage names never mutate Object.prototype', async ()
       assert.doesNotMatch(written, /__proto__|constructor/);
       assert.equal(
         JSON.stringify(readStageModels(dir)),
-        '{"default":null,"pipelines":{"discovery":{"scout":"b/y"},"toString":{"pwned3":"a/x"}}}',
+        '{"default":null,"review":null,"pipelines":{"discovery":{"scout":"b/y"},"toString":{"pwned3":"a/x"}}}',
       );
     } finally {
       delete Object.prototype.pwned;
