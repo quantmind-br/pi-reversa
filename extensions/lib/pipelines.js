@@ -10,13 +10,16 @@
  *   skill        packaged skill alias, or null for a reference/controller stage
  *   label        human label shown in progress updates
  *   fanOut       "modules" | "units" | null
- *   optional     optional stages may fail without failing the whole pipeline
+ *   optional     stage may fail without aborting at itself; it does NOT make the
+ *                failure acceptable to mandatory consumers downstream
  *   task         stage-specific instruction appended to the skill body
  *   dependsOn    stage ids that must have succeeded before this stage runs
- *   failPipeline if true, a failed stage aborts remaining dependent work
+ *   failPipeline `false` suppresses only the immediate abort at that stage
  *   kind         "agent" (default) | "controller"
  *   handler      controller handler name when kind === "controller"
  *   args         optional skill args for unattended modes
+ *   outputs      declared artifacts; supports {{output_folder}} and {{item}}
+ *   condition    surface.automation_signals flag that must be detected to run
  */
 
 /**
@@ -35,102 +38,31 @@
  *   handler?: string,
  *   args?: string,
  *   phase?: string,
+ *   outputs?: string[],
+ *   condition?: string,
  * }} Stage
  */
 
+import { loadDiscoveryWorkflow } from "./workflow-adapter.js";
+
 /** @type {Record<string, { label: string, stages: Stage[] }>} */
 export const PIPELINES = {
-  discovery: {
-    label: "Time de Descoberta",
-    stages: [
-      {
-        id: "scout",
-        skill: "reversa-scout",
-        label: "Scout",
-        fanOut: null,
-        optional: false,
-        failPipeline: true,
-        task: "Execute o mapeamento de superfície completo do projeto e gere `.reversa/context/surface.json` com o campo `modules` preenchido.",
-      },
-      {
-        id: "archaeologist",
-        skill: "reversa-archaeologist",
-        label: "Archaeologist",
-        fanOut: "modules",
-        optional: false,
-        dependsOn: ["scout"],
-        failPipeline: true,
-        task: "Execute a escavação de código.",
-      },
-      {
-        id: "detective",
-        skill: "reversa-detective",
-        label: "Detective",
-        fanOut: null,
-        optional: false,
-        dependsOn: ["archaeologist"],
-        failPipeline: true,
-        task: "Execute a investigação de regras de negócio e histórico.",
-      },
-      {
-        id: "architect",
-        skill: "reversa-architect",
-        label: "Architect",
-        fanOut: null,
-        optional: false,
-        dependsOn: ["detective"],
-        failPipeline: true,
-        task: "Execute a reconstrução arquitetural.",
-      },
-      {
-        id: "writer",
-        skill: "reversa-writer",
-        label: "Writer",
-        fanOut: "units",
-        optional: false,
-        dependsOn: ["architect"],
-        failPipeline: true,
-        args: "--unattended",
-        task: "Gere as especificações SDD da unit solicitada em modo unattended.",
-      },
-      {
-        id: "writer-globals",
-        skill: "reversa-writer",
-        label: "Writer globals",
-        fanOut: null,
-        optional: false,
-        dependsOn: ["writer"],
-        failPipeline: true,
-        args: "--globals --unattended",
-        task: "Gere os artefatos globais de rastreabilidade (globals) em modo unattended.",
-      },
-      {
-        id: "reviewer",
-        skill: "reversa-reviewer",
-        label: "Reviewer",
-        fanOut: null,
-        optional: true,
-        dependsOn: ["writer-globals"],
-        failPipeline: false,
-        task: "Revise as specs geradas e registre os vereditos.",
-      },
-      {
-        id: "regression-check",
-        skill: null,
-        label: "Regression check",
-        fanOut: null,
-        optional: true,
-        dependsOn: ["reviewer"],
-        failPipeline: false,
-        reference: "reversa/references/step-04-regression-check.md",
-        requires: "regression-watch",
-        task: "Execute a verificação de regressão semântica seguindo integralmente o documento de referência indicado acima.",
-      },
-    ],
-  },
+  discovery: loadDiscoveryWorkflow(),
   migrate: {
     label: "Time de Migração",
     stages: [
+      {
+        id: "migrate-preflight",
+        skill: null,
+        label: "Migrate preflight",
+        fanOut: null,
+        optional: false,
+        failPipeline: true,
+        kind: "controller",
+        handler: "migrate-preflight",
+        outputs: ["{{output_folder}}/migration_brief.md"],
+        task: "Controller-owned migration brief from discovery output and interview answers.",
+      },
       {
         id: "paradigm-advisor",
         skill: "reversa-paradigm-advisor",
@@ -139,6 +71,7 @@ export const PIPELINES = {
         optional: false,
         failPipeline: true,
         task: "Recomende o paradigma e a stack alvo da migração. Em modo unattended, registre a recomendação e continue sem pausa.",
+        outputs: ["{{output_folder}}/paradigm_decision.md"],
       },
       {
         id: "curator",
@@ -149,6 +82,7 @@ export const PIPELINES = {
         dependsOn: ["paradigm-advisor"],
         failPipeline: true,
         task: "Cure o material do legado relevante para a migração. Aplique defaults de --auto para itens pendentes e registre auto-decididos.",
+        outputs: ["{{output_folder}}/target_business_rules.md"],
       },
       {
         id: "strategist",
@@ -159,6 +93,10 @@ export const PIPELINES = {
         dependsOn: ["curator"],
         failPipeline: true,
         task: "Defina a estratégia e as ondas de migração. Adote a estratégia recomendada em modo unattended.",
+        outputs: [
+          "{{output_folder}}/migration_strategy.md",
+          "{{output_folder}}/risk_register.md",
+        ],
       },
       {
         id: "designer-topology",
@@ -170,6 +108,7 @@ export const PIPELINES = {
         failPipeline: true,
         phase: "topology",
         task: "Execute somente a Fase 1 (topology). Produza topology_decision.md com recomendação explícita. Não rode a Fase 2.",
+        outputs: ["{{output_folder}}/topology_decision.md"],
       },
       {
         id: "designer-architecture",
@@ -181,6 +120,7 @@ export const PIPELINES = {
         failPipeline: true,
         phase: "architecture",
         task: "Execute a Fase 2 (architecture) assumindo topologyApproved=true. Produza target_architecture/domain/data e data_migration_plan.",
+        outputs: ["{{output_folder}}/target_architecture.md"],
       },
       {
         id: "screen-translator-mode",
@@ -192,6 +132,7 @@ export const PIPELINES = {
         failPipeline: true,
         phase: "mode",
         task: "Execute somente a Fase 1 (mode). Produza screen_modernization_decision.md com modo recomendado. Não rode a Fase 2.",
+        outputs: ["{{output_folder}}/screen_modernization_decision.md"],
       },
       {
         id: "screen-translator-generation",
@@ -203,6 +144,7 @@ export const PIPELINES = {
         failPipeline: true,
         phase: "generation",
         task: "Execute a Fase 2 (generation) assumindo screenModeApproved=true. Gere target_screens, deviations e inventory/golden quando aplicável.",
+        outputs: ["{{output_folder}}/target_screens.md"],
       },
       {
         id: "inspector",
@@ -214,11 +156,35 @@ export const PIPELINES = {
         failPipeline: false,
         task: "Inspecione os artefatos de migração e gere o handoff.",
       },
+      {
+        id: "migrate-finalize",
+        skill: null,
+        label: "Migrate finalize",
+        fanOut: null,
+        optional: false,
+        failPipeline: false,
+        kind: "controller",
+        handler: "migrate-finalize",
+        outputs: ["{{output_folder}}/handoff.md"],
+        task: "Controller-owned migration handoff and ambiguity consolidation.",
+      },
     ],
   },
   docs: {
     label: "Time Reversa Docs",
     stages: [
+      {
+        id: "docs-config",
+        skill: null,
+        label: "Docs config",
+        fanOut: null,
+        optional: false,
+        failPipeline: true,
+        kind: "controller",
+        handler: "docs-config",
+        outputs: ["{{output_folder}}/.config.json"],
+        task: "Controller-owned docs configuration derived from the interview answers.",
+      },
       {
         id: "docs-vendor",
         skill: null,
@@ -239,6 +205,10 @@ export const PIPELINES = {
         dependsOn: ["docs-vendor"],
         failPipeline: true,
         task: "Monte a estrutura espacial do mini-site.",
+        outputs: [
+          "{{output_folder}}/arquitetura.html",
+          "{{output_folder}}/modulos.html",
+        ],
       },
       {
         id: "docs-analyst",
@@ -269,6 +239,7 @@ export const PIPELINES = {
         dependsOn: ["docs-storyteller"],
         failPipeline: true,
         task: "Integre e publique o mini-site final. Não baixe vendor nem rode smoke HTTP; o controlador faz isso.",
+        outputs: ["{{output_folder}}/index.html"],
       },
       {
         id: "docs-smoke",

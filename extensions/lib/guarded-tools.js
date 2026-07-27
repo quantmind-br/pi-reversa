@@ -20,7 +20,7 @@ export class WriteOutsideSandboxError extends Error {
  * @param {string} root absolute
  * @param {string} target absolute
  */
-function contains(root, target) {
+export function containsPath(root, target) {
   const rel = relative(root, target);
   return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
 }
@@ -79,20 +79,20 @@ export function createSandboxGuard(cwd, allowedRoots) {
   const canonicalCwd = canonicalize(baseCwd) ?? baseCwd;
   const roots = allowedRoots.map((root) => resolve(baseCwd, root));
   const canonicalRoots = roots.map((root) =>
-    contains(baseCwd, root) ? join(canonicalCwd, relative(baseCwd, root)) : (canonicalize(root) ?? root),
+    containsPath(baseCwd, root) ? join(canonicalCwd, relative(baseCwd, root)) : (canonicalize(root) ?? root),
   );
 
   return (absolutePath) => {
     const target = resolve(absolutePath);
 
-    if (!roots.some((root) => contains(root, target))) {
+    if (!roots.some((root) => containsPath(root, target))) {
       throw new WriteOutsideSandboxError(
         `Reversa sandbox: refusing to write outside allowed roots: ${absolutePath}`,
       );
     }
 
     const canonicalTarget = canonicalize(target);
-    if (canonicalTarget === null || !canonicalRoots.some((root) => contains(root, canonicalTarget))) {
+    if (canonicalTarget === null || !canonicalRoots.some((root) => containsPath(root, canonicalTarget))) {
       throw new WriteOutsideSandboxError(
         `Reversa sandbox: refusing to write through a symlink that escapes the allowed roots: ${absolutePath}`,
       );

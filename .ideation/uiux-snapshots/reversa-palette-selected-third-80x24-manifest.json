@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "producer": "screenshot-master/1.0.0",
+  "run_id": "20260727T110932Z-tui-reversa-palette-selected-third-80x24",
+  "kind": "tui",
+  "status": "complete",
+  "created_at": "2026-07-27T11:09:32Z",
+  "backend": "tui-live-grim-geometry+fallback (text/ANSI/state); headless aha+chromium re-render (published PNG)",
+  "source": {
+    "type": "TUI",
+    "target": {
+      "session": "ssm-env-1785150513501",
+      "executable": "/usr/bin/env",
+      "cwd": "/home/_user/dev/pi-reversa",
+      "cols": 80,
+      "rows": 24,
+      "term": "xterm-256color",
+      "label": "reversa-palette-selected-third-80x24"
+    }
+  },
+  "capture": {
+    "image": "../uiux-screenshots/reversa-palette-selected-third-80x24.png",
+    "width": 808,
+    "height": 1200,
+    "scale": 1,
+    "sha256": "6a2e3ca89aa0ae9f5d232983345e9484a5fefd0e0aaea39f019badafcc0b7c53"
+  },
+  "warnings": [
+    {
+      "code": "backend-fallback",
+      "message": "grim -T did not match the temporary terminal; captured its validated geometry without changing focus"
+    },
+    {
+      "code": "post-capture-redaction",
+      "message": "Workstation username redacted to '_user' in text/ANSI/state/manifest after capture; the published PNG was re-rendered headlessly from the redacted ANSI, so its dimensions and hash differ from the original live capture. Dimensions and SHA-256 values in this manifest describe the published artifacts."
+    }
+  ],
+  "errors": [],
+  "artifacts": [
+    {
+      "kind": "terminal-text",
+      "path": "../uiux-captures/reversa-palette-selected-third-80x24.txt",
+      "media_type": "text/plain",
+      "sha256": "c562a80bde894b85de88856bb34737770ac2aeb6963011babff11d94b7af3384"
+    },
+    {
+      "kind": "terminal-ansi",
+      "path": "../uiux-captures/reversa-palette-selected-third-80x24.ansi",
+      "media_type": "text/plain",
+      "sha256": "1a7ea35706ea94b855119cd25d7e10bb8ca04b4dba9a4a2b6f09954f54348f04"
+    },
+    {
+      "kind": "terminal-state",
+      "path": "reversa-palette-selected-third-80x24.json",
+      "media_type": "application/json",
+      "sha256": "dcff7969209949b6ff7b294c66ee0eae310f28d73043c8c846160d0348537f95"
+    },
+    {
+      "kind": "screenshot",
+      "path": "../uiux-screenshots/reversa-palette-selected-third-80x24.png",
+      "media_type": "image/png",
+      "sha256": "6a2e3ca89aa0ae9f5d232983345e9484a5fefd0e0aaea39f019badafcc0b7c53"
+    }
+  ]
+}

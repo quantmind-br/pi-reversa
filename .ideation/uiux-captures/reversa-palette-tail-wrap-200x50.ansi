@@ -1,0 +1,50 @@
+
+ [38;2;255;255;0mWarning: No models available. Use /login to log into a provider via OAuth or API key. See:
+[39m [38;2;255;255;0m  /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/providers.md
+[39m [38;2;255;255;0m  /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/models.md[39m
+
+[38;2;80;80;80m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[39m/reversa[7m [0m
+[38;2;80;80;80m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[39m  skill:reversa-strategist[38;2;128;128;128m        [t] Terceiro agente do Time de Migração. Propõe estratégias de migração com trade-offs explícitos, considerando brief, paradigma e apetite. Recomenda uma estratégia[39m
+  skill:reversa-sync[38;2;128;128;128m              [t] Convergência pós-coding do Reversa. Destila a feature entregue (requirements, legacy-impact, regression-watch) em um adendo dentro de `.specs/addenda/`, mantend[39m
+  skill:reversa-to-do[38;2;128;128;128m             [t] Decompõe o roadmap em ações atômicas com IDs sequenciais, dependências e marcador de paralelismo. Use quando o usuário digitar "/reversa-to-do", "reversa-to-do"[39m
+  skill:reversa-visor[38;2;128;128;128m             [t] Documenta a interface do sistema legado a partir de screenshots — extrai componentes, layouts, fluxos de navegação e estados de tela. Use quando screenshots do [39m
+[38;2;138;190;183m→ skill:reversa-writer            [t] Gera especificações executáveis do sistema legado como contratos operacionais, em formato de pasta-por-unit com requirements.md, design.md e tasks.md. Use na fa[39m
+[38;2;128;128;128m  (124/124)[39m
+[38;2;102;102;102m~/dev/pi-reversa (main)[39m
+[38;2;102;102;102m0.0%/0 (auto)                                                                                                                                                                                    unknown
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

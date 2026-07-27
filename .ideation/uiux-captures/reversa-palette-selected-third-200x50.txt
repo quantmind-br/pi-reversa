@@ -1,0 +1,50 @@
+
+ Warning: No models available. Use /login to log into a provider via OAuth or API key. See:
+   /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/providers.md
+   /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/models.md
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/reversa
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  reversa                         [t] Ponto de entrada principal do Reversa. Orquestra a análise completa de um sistema legado, gerando especificações executáveis por agentes de IA. Use quando o usu
+  reversa-cbm                     [t] Status/refresh/enable/disable do code intelligence (codebase-memory).
+→ reversa-adjudicator             [t] Adjudica findings independentes do Reversa contra a evidência original, deduplica problemas, aceita ou rejeita cada finding, corrige somente documentação gerenc
+  reversa-agents-help             [t] Explica com analogias o que cada agente do Reversa faz e quando usá-lo. Ative com /reversa-agents-help.
+  reversa-archaeologist           [t] Analisa profundamente o código do projeto legado módulo a módulo — extrai algoritmos, fluxos de controle, estruturas de dados e dicionário de dados. Use na fase
+  (3/124)
+~/dev/pi-reversa (main)
+0.0%/0 (auto)                                                                                                                                                                                    unknown
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

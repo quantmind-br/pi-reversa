@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import {
   DEFAULT_SPECS_ROOT,
@@ -10,6 +10,7 @@ import {
 
 const STATE_PATH = [".reversa", "state.json"];
 const SURFACE_PATH = [".reversa", "context", "surface.json"];
+const MODULES_PATH = [".reversa", "context", "modules.json"];
 const CONFIG_PATH = [".reversa", "config.toml"];
 
 /** @deprecated Prefer DEFAULT_DISCOVERY_FOLDER / resolveProjectLayout(). */
@@ -32,7 +33,7 @@ const noGuard = (absolutePath) => absolutePath;
  * @param {string} content
  * @param {(absolutePath: string) => string} [guard]
  */
-function atomicWrite(destination, content, guard = noGuard) {
+export function atomicWrite(destination, content, guard = noGuard) {
   const target = guard(destination);
   mkdirSync(guard(dirname(target)), { recursive: true });
   const tmp = guard(`${target}.${process.pid}.tmp`);
@@ -104,6 +105,109 @@ export function readSurface(cwd) {
 }
 
 /**
+ * Os corpos dos skills citam caminhos `.specs/`, então o Scout costuma gravar
+ * `surface.json` na pasta de saída da pipeline em vez do canônico
+ * `.reversa/context/surface.json`, que o orquestrador e nove skills Reversa leem.
+ * Atualiza a cópia canônica a partir da deslocada quando a canônica está
+ * ausente, corrompida ou mais antiga.
+ *
+ * @param {string} cwd
+ * @param {string} folder pasta de saída da pipeline, relativa a cwd
+ * @param {(absolutePath: string) => string} [guard]
+ * @returns {{ recovered: boolean, from?: string }}
+ */
+export function normalizeSurfaceLocation(cwd, folder, guard) {
+  if (typeof folder !== "string" || !isSafeOutputFolder(folder)) return { recovered: false };
+
+  const canonical = pathIn(cwd, SURFACE_PATH);
+  const stray = join(resolve(cwd), folder, "surface.json");
+  if (stray === canonical) return { recovered: false };
+
+  let strayRaw;
+  try {
+    strayRaw = readFileSync(stray, "utf8");
+    const parsed = JSON.parse(strayRaw);
+    if (!parsed || typeof parsed !== "object") return { recovered: false };
+  } catch {
+    return { recovered: false };
+  }
+
+  if (readSurface(cwd) !== null) {
+    const canonicalTime = statSync(canonical, { throwIfNoEntry: false })?.mtimeMs ?? 0;
+    const strayTime = statSync(stray, { throwIfNoEntry: false })?.mtimeMs ?? 0;
+    if (strayTime <= canonicalTime) return { recovered: false };
+  }
+
+  atomicWrite(canonical, strayRaw, guard);
+  return { recovered: true, from: `${folder}/surface.json` };
+}
+
+/**
+ * Read the Scout's `organization_suggestion`, tolerating the flat shape.
+ *
+ * The schema nests `granularity`/`rationale`/`signals`/`features` under
+ * `organization_suggestion` (`reversa-scout/references/surface-schema.md:50`),
+ * but the skill body describes those fields inline, so real Scout runs also
+ * emit them at the top level of `surface.json`. Both are accepted; the nested
+ * form wins when present.
+ *
+ * @param {Record<string, any> | null | undefined} surface
+ * @returns {Record<string, any> | null}
+ */
+export function readOrganizationSuggestion(surface) {
+  if (!surface || typeof surface !== "object") return null;
+
+  const nested = surface.organization_suggestion;
+  if (nested && typeof nested === "object" && SPEC_GRANULARITIES.includes(nested.granularity)) {
+    return nested;
+  }
+  if (SPEC_GRANULARITIES.includes(surface.granularity)) {
+    return {
+      granularity: surface.granularity,
+      rationale: surface.rationale,
+      signals: Array.isArray(surface.signals) ? surface.signals : [],
+      features: Array.isArray(surface.features) ? surface.features : [],
+    };
+  }
+  return nested && typeof nested === "object" ? nested : null;
+}
+
+/**
+ * Report how a `surface.json` deviates from the Scout contract.
+ *
+ * Deviations are never fatal — the orchestrator degrades around them — but a
+ * silent degradation is what turns one off-contract field into a pipeline that
+ * skips half its stages for no stated reason.
+ *
+ * @param {Record<string, any> | null | undefined} surface
+ * @returns {string[]} human-readable deviations, empty when on contract
+ */
+export function validateSurface(surface) {
+  if (!surface || typeof surface !== "object") return ["surface.json ausente ou ilegível"];
+
+  /** @type {string[]} */
+  const problems = [];
+  if (listScoutModules(surface).length === 0) {
+    problems.push("campo obrigatório `modules` ausente ou vazio");
+  }
+  if (!readOrganizationSuggestion(surface)) {
+    problems.push("campo obrigatório `organization_suggestion` ausente ou com `granularity` inválida");
+  } else if (!surface.organization_suggestion) {
+    problems.push("`organization_suggestion` emitido como campos soltos na raiz; lido mesmo assim");
+  }
+
+  const signals = surface.automation_signals;
+  if (signals && typeof signals === "object") {
+    for (const [flag, value] of Object.entries(signals)) {
+      if (value && typeof value === "object" && !("detected" in value) && "present" in value) {
+        problems.push(`automation_signals.${flag} usa \`present\` em vez de \`detected\`; lido mesmo assim`);
+      }
+    }
+  }
+  return problems;
+}
+
+/**
  * Extract module names from a Scout `surface.json`.
  *
  * @param {Record<string, any> | null | undefined} surface
@@ -132,6 +236,25 @@ export function listScoutModules(surface) {
   }
 
   return [];
+}
+
+/**
+ * Module names from the Archaeologist's `.reversa/context/modules.json`.
+ *
+ * A structured, contract-declared source (`reversa-archaeologist/references/
+ * modules-schema.md`), so it is a sound fallback for a `surface.json` that
+ * omitted `modules`. Only stages that run after the Archaeologist may use it.
+ *
+ * @param {string} cwd
+ * @returns {string[]}
+ */
+export function listArchaeologistModules(cwd) {
+  try {
+    const parsed = JSON.parse(readFileSync(pathIn(cwd, MODULES_PATH), "utf8"));
+    return listScoutModules(parsed);
+  } catch {
+    return [];
+  }
 }
 
 /**

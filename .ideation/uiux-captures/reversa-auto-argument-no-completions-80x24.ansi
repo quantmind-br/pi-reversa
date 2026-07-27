@@ -1,0 +1,24 @@
+  "enabled": false,[38;2;102;102;102m                                                      unknown
+[39m  "auto_index": true,
+  "provider": "codebase-memory",
+  "binary_version": null,
+  "project": null,
+  "canonical_root": "/home/_user/dev/pi-reversa",
+  "curated_actions": [],
+  "warnings": [],
+  "fingerprint": null
+ [38;2;255;255;0mWarning: cbm status: available=false[39m
+
+ [38;2;102;102;102mcode intelligence disabled for this process[39m
+
+[38;2;80;80;80m────────────────────────────────────────────────────────────────────────────────
+[39m/reversa-auto [7m [0m
+[38;2;80;80;80m────────────────────────────────────────────────────────────────────────────────
+[38;2;102;102;102m~/dev/pi-reversa (main)[39m
+[38;2;102;102;102m0.0%/0 (auto)                                                            unknown
+
+
+
+
+
+

@@ -10,9 +10,11 @@ import {
   captureWorktreeFingerprint,
   fingerprintsMatch,
 } from './freshness.js';
-import { acquireExclusiveLock, indexLockPath } from './locks.js';
+import { acquireExclusiveLock } from '../locks.js';
+import { indexLockPath } from './locks.js';
 import { hashValue, materializeContextBundle } from './materializer.js';
 import { canonicalizeRoot, deriveProjectName, resolveBoundProject } from './project.js';
+import { canonicalize, containsPath, WriteOutsideSandboxError } from '../guarded-tools.js';
 
 /**
  * @typedef {object} CodeIntelSession
@@ -40,11 +42,31 @@ export function cacheDirFor(projectRoot) {
 }
 
 /**
+ * Reject a path that escapes `projectRoot` through symlinks.
+ *
+ * `.reversa/cache` is created before any lock is taken, so without this check a
+ * symlinked cache directory materializes outside the project.
+ *
+ * @param {string} projectRoot
+ * @param {string} target
+ */
+function assertInsideProject(projectRoot, target) {
+  const root = canonicalize(resolve(projectRoot));
+  const resolved = canonicalize(target);
+  if (root === null || resolved === null || !containsPath(root, resolved)) {
+    throw new WriteOutsideSandboxError(
+      `Reversa sandbox: refusing to write code intelligence state outside the project: ${target}`,
+    );
+  }
+}
+
+/**
  * @param {string} projectRoot
  * @returns {Record<string, string | undefined>}
  */
 export function buildCbmEnv(projectRoot) {
   const cacheDir = cacheDirFor(projectRoot);
+  assertInsideProject(projectRoot, cacheDir);
   mkdirSync(cacheDir, { recursive: true });
   return {
     CBM_CACHE_DIR: cacheDir,
@@ -55,8 +77,10 @@ export function buildCbmEnv(projectRoot) {
 /**
  * @param {string} destination
  * @param {unknown} value
+ * @param {string} [projectRoot] when given, `destination` must resolve inside it
  */
-function atomicWriteJson(destination, value) {
+function atomicWriteJson(destination, value, projectRoot) {
+  if (projectRoot) assertInsideProject(projectRoot, destination);
   mkdirSync(dirname(destination), { recursive: true });
   const tmp = `${destination}.${process.pid}.tmp`;
   writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
@@ -212,6 +236,9 @@ export async function ensureIndexedAndMaterialized(session, options = {}) {
           existing: project,
         });
       } catch (error) {
+        // A sandbox violation is never a degraded-capability signal: it must
+        // stop the run, not silently disable code intelligence.
+        if (error instanceof WriteOutsideSandboxError) throw error;
         session.available = false;
         session.reason = error instanceof Error ? error.message : String(error);
         session.warnings.push(session.reason);
@@ -353,7 +380,10 @@ async function indexRepository(session, options) {
     throw new CodeIntelligenceError('unavailable', 'binary not resolved');
   }
 
-  const release = acquireExclusiveLock(indexLockPath(session.projectRoot));
+  const release = acquireExclusiveLock(indexLockPath(session.projectRoot), {
+    label: 'codebase-memory index',
+    containRoot: session.projectRoot,
+  });
   const started = Date.now();
   try {
     const name = options.existing?.name ?? deriveProjectName(session.projectRoot);
@@ -400,7 +430,7 @@ async function indexRepository(session, options) {
       indexed_at: new Date().toISOString(),
       duration_ms: Date.now() - started,
       result_status: result?.status ?? null,
-    });
+    }, session.projectRoot);
 
     pushEvent(session, 'indexed', {
       project: project.name,
@@ -622,12 +652,17 @@ function pushEvent(session, type, payload = {}) {
 /**
  * Persist run events for observability.
  *
+ * `runDir` is validated when the run starts, but `.reversa/runs` can be swapped
+ * for an external symlink during the async CBM work, so re-validate through the
+ * caller's sandbox guard at write time rather than trusting the earlier check.
+ *
  * @param {string} runDir
  * @param {CodeIntelSession} session
+ * @param {(absolutePath: string) => string} [guard]
  */
-export function writeSessionEvents(runDir, session) {
-  if (!existsSync(runDir)) mkdirSync(runDir, { recursive: true });
-  const target = join(runDir, 'cbm-events.jsonl');
+export function writeSessionEvents(runDir, session, guard = (path) => path) {
+  if (!existsSync(runDir)) mkdirSync(guard(runDir), { recursive: true });
+  const target = guard(join(runDir, 'cbm-events.jsonl'));
   const lines = session.events.map((event) => JSON.stringify(event));
   writeFileSync(target, `${lines.join('\n')}${lines.length ? '\n' : ''}`, 'utf8');
 }

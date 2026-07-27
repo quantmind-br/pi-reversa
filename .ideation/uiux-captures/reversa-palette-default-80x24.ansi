@@ -1,0 +1,24 @@
+
+ [38;2;255;255;0mWarning: No models available. Use /login to log into a provider via OAuth or
+[39m [38;2;255;255;0mAPI key. See:
+[39m [38;2;255;255;0m
+[39m [38;2;255;255;0m/home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/p
+[39m [38;2;255;255;0mroviders.md
+[39m [38;2;255;255;0m
+[39m [38;2;255;255;0m/home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/m
+[39m [38;2;255;255;0models.md[39m
+
+[38;2;80;80;80m────────────────────────────────────────────────────────────────────────────────
+[39m/reversa[7m [0m
+[38;2;80;80;80m────────────────────────────────────────────────────────────────────────────────
+[38;2;138;190;183m→ reversa                         [t] Ponto de entrada principal do Reversa. O[39m
+  reversa-cbm[38;2;128;128;128m                     [t] Status/refresh/enable/disable do code in[39m
+  reversa-adjudicator[38;2;128;128;128m             [t] Adjudica findings independentes do Rever[39m
+  reversa-agents-help[38;2;128;128;128m             [t] Explica com analogias o que cada agente [39m
+  reversa-archaeologist[38;2;128;128;128m           [t] Analisa profundamente o código do projet[39m
+[38;2;128;128;128m  (1/124)[39m
+[38;2;102;102;102m~/dev/pi-reversa (main)[39m
+[38;2;102;102;102m0.0%/0 (auto)                                                            unknown
+
+
+

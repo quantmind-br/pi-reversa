@@ -1,0 +1,24 @@
+  "enabled": false,[38;2;102;102;102m                                                      unknown
+[39m  "auto_index": true,
+  "provider": "codebase-memory",
+  "binary_version": null,
+  "project": null,
+  "canonical_root": "/home/_user/dev/pi-reversa",
+  "curated_actions": [],
+  "warnings": [],
+  "fingerprint": null
+ [38;2;255;255;0mWarning: cbm status: available=false[39m
+
+ [38;2;102;102;102mcode intelligence disabled for this process[39m
+
+[38;2;80;80;80m────────────────────────────────────────────────────────────────────────────────
+[39m/reversa[7m [0m
+[38;2;80;80;80m────────────────────────────────────────────────────────────────────────────────
+[39m  reversa-visor[38;2;128;128;128m                   [t] Documenta a interface do sistema legado [39m
+  reversa-writer[38;2;128;128;128m                  [t] Gera especificações executáveis do siste[39m
+[38;2;138;190;183m→ reversa-auto                    [t] Executa o pipeline Reversa de ponta a po[39m
+  skill:reversa[38;2;128;128;128m                   [t] Ponto de entrada principal do Reversa. O[39m
+  skill:reversa-adjudicator[38;2;128;128;128m       [t] Adjudica findings independentes do Rever[39m
+[38;2;128;128;128m  (63/124)[39m
+[38;2;102;102;102m~/dev/pi-reversa (main)[39m
+[38;2;102;102;102m0.0%/0 (auto)                                                            unknown

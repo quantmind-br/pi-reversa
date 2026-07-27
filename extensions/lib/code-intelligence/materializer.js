@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync, renameSync, existsSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
+import { canonicalize, containsPath, WriteOutsideSandboxError } from '../guarded-tools.js';
 
 export const CONTEXT_DIR = ['.reversa', 'context', 'codebase-memory'];
 export const DEFAULT_MAX_FILE_BYTES = 512 * 1024;
@@ -95,6 +96,16 @@ export function materializeContextBundle(options) {
   /** @type {string[]} */
   const warnings = [];
   let total = 0;
+
+  // `.reversa/context` may be symlinked outside the project; reject before any
+  // directory is materialized.
+  const canonicalRoot = canonicalize(resolve(options.projectRoot));
+  const canonicalTarget = canonicalize(root);
+  if (canonicalRoot === null || canonicalTarget === null || !containsPath(canonicalRoot, canonicalTarget)) {
+    throw new WriteOutsideSandboxError(
+      `Reversa sandbox: refusing to materialize code intelligence context outside the project: ${root}`,
+    );
+  }
 
   mkdirSync(root, { recursive: true });
 

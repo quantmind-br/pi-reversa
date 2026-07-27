@@ -1,0 +1,50 @@
+
+ Warning: No models available. Use /login to log into a provider via OAuth or API key. See:
+   /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/providers.md
+   /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/models.md
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/reversa
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  skill:reversa-strategist        [t] Terceiro agente do Time de Migração. Propõe estratégias de migração com trade-offs explícitos, considerando brief, paradigma e apetite. Recomenda uma estratégia
+  skill:reversa-sync              [t] Convergência pós-coding do Reversa. Destila a feature entregue (requirements, legacy-impact, regression-watch) em um adendo dentro de `.specs/addenda/`, mantend
+  skill:reversa-to-do             [t] Decompõe o roadmap em ações atômicas com IDs sequenciais, dependências e marcador de paralelismo. Use quando o usuário digitar "/reversa-to-do", "reversa-to-do"
+  skill:reversa-visor             [t] Documenta a interface do sistema legado a partir de screenshots — extrai componentes, layouts, fluxos de navegação e estados de tela. Use quando screenshots do
+→ skill:reversa-writer            [t] Gera especificações executáveis do sistema legado como contratos operacionais, em formato de pasta-por-unit com requirements.md, design.md e tasks.md. Use na fa
+  (124/124)
+~/dev/pi-reversa (main)
+0.0%/0 (auto)                                                                                                                                                                                    unknown
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

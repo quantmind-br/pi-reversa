@@ -13,3 +13,11 @@ if (!existsSync(source)) throw new Error(`Missing Reversa skills at ${source}`);
 rmSync(target, { recursive: true, force: true });
 mkdirSync(target, { recursive: true });
 cpSync(source, target, { recursive: true, dereference: true });
+
+// The canonical discovery workflow lives outside reversa's `exports` map, so it
+// is materialized here instead of imported. `extensions/` ships in `files`.
+const workflowSrc = join(reversaRoot, "templates", "workflow.json");
+const workflowDst = join(projectRoot, "extensions", "generated", "reversa-workflow-discovery.json");
+if (!existsSync(workflowSrc)) throw new Error(`Missing Reversa workflow at ${workflowSrc}`);
+mkdirSync(dirname(workflowDst), { recursive: true });
+cpSync(workflowSrc, workflowDst);

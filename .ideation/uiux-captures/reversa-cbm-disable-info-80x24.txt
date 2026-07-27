@@ -1,0 +1,24 @@
+ docs.
+
+────────────────────────────────────────────────────────────────────────────────
+/reversa-cbm status{
+  "available": false,───────────────────────────────────────────────────────────
+  "reason": "code intelligence disabled by configuration",
+  "enabled": false,                                                      unknown
+  "auto_index": true,
+  "provider": "codebase-memory",
+  "binary_version": null,
+  "project": null,
+  "canonical_root": "/home/_user/dev/pi-reversa",
+  "curated_actions": [],
+  "warnings": [],
+  "fingerprint": null
+ Warning: cbm status: available=false
+
+ code intelligence disabled for this process
+
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+~/dev/pi-reversa (main)
+0.0%/0 (auto)                                                            unknown

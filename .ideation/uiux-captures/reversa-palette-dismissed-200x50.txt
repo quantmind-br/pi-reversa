@@ -1,0 +1,50 @@
+
+ Warning: No models available. Use /login to log into a provider via OAuth or API key. See:
+   /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/providers.md
+   /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/models.md
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/reversa
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/dev/pi-reversa (main)
+0.0%/0 (auto)                                                                                                                                                                                    unknown
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

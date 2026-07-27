@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { pipeline } from "node:stream/promises";
 import { createHash } from "node:crypto";
+import { containsPath } from "./guarded-tools.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_BYTES = 25 * 1024 * 1024;
@@ -194,6 +195,10 @@ export async function smokeTestDocs(options) {
   const pages = listHtmlFiles(docsRoot);
   let checked = 0;
 
+  if (pages.length === 0) {
+    errors.push({ page: "(nenhuma)", kind: "no-pages", detail: "nenhum HTML gerado em docs" });
+  }
+
   // Static checks first.
   for (const page of pages) {
     checked += 1;
@@ -209,12 +214,22 @@ export async function smokeTestDocs(options) {
       const src = match[1];
       if (/^https?:\/\//i.test(src) || src.startsWith("data:")) continue;
       const assetPath = resolve(dirname(absolute), src);
-      if (!assetPath.startsWith(docsRoot)) {
+      if (!containsPath(docsRoot, assetPath)) {
         errors.push({ page, kind: "asset-escape", detail: src });
         continue;
       }
       if (!existsSync(assetPath)) {
         errors.push({ page, kind: "asset-missing", detail: src });
+      }
+    }
+    for (const match of html.matchAll(/href=["']([^"']+)["']/g)) {
+      const href = match[1];
+      if (/^(https?:|data:|mailto:)/i.test(href) || href.startsWith("#")) continue;
+      const target = href.split("#")[0];
+      if (!target) continue;
+      const linkPath = resolve(dirname(absolute), target);
+      if (!containsPath(docsRoot, linkPath) || !existsSync(linkPath)) {
+        errors.push({ page, kind: "link-broken", detail: href });
       }
     }
   }
@@ -226,7 +241,7 @@ export async function smokeTestDocs(options) {
         const urlPath = decodeURIComponent((req.url ?? "/").split("?")[0]);
         const relative = urlPath === "/" ? "/index.html" : urlPath;
         const filePath = resolve(docsRoot, `.${relative}`);
-        if (!filePath.startsWith(docsRoot) || !existsSync(filePath)) {
+        if (!containsPath(docsRoot, filePath) || !existsSync(filePath)) {
           res.writeHead(404);
           res.end("missing");
           return;

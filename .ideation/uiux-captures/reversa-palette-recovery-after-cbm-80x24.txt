@@ -1,0 +1,24 @@
+  "enabled": false,                                                      unknown
+  "auto_index": true,
+  "provider": "codebase-memory",
+  "binary_version": null,
+  "project": null,
+  "canonical_root": "/home/_user/dev/pi-reversa",
+  "curated_actions": [],
+  "warnings": [],
+  "fingerprint": null
+ Warning: cbm status: available=false
+
+ code intelligence disabled for this process
+
+────────────────────────────────────────────────────────────────────────────────
+/reversa
+────────────────────────────────────────────────────────────────────────────────
+→ reversa                         [t] Ponto de entrada principal do Reversa. O
+  reversa-cbm                     [t] Status/refresh/enable/disable do code in
+  reversa-adjudicator             [t] Adjudica findings independentes do Rever
+  reversa-agents-help             [t] Explica com analogias o que cada agente
+  reversa-archaeologist           [t] Analisa profundamente o código do projet
+  (1/124)
+~/dev/pi-reversa (main)
+0.0%/0 (auto)                                                            unknown

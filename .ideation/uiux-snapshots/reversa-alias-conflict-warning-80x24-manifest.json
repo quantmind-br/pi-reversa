@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "producer": "screenshot-master/1.0.0",
+  "run_id": "20260727T111206Z-tui-reversa-alias-conflict-warning-80x24",
+  "kind": "tui",
+  "status": "complete",
+  "created_at": "2026-07-27T11:12:07Z",
+  "backend": "tui-live-grim-geometry+fallback (text/ANSI/state); headless aha+chromium re-render (published PNG)",
+  "source": {
+    "type": "TUI",
+    "target": {
+      "session": "ssm-env-1785150717514",
+      "executable": "/usr/bin/env",
+      "cwd": "/home/_user/dev/pi-reversa",
+      "cols": 80,
+      "rows": 24,
+      "term": "xterm-256color",
+      "label": "reversa-alias-conflict-warning-80x24"
+    }
+  },
+  "capture": {
+    "image": "../uiux-screenshots/reversa-alias-conflict-warning-80x24.png",
+    "width": 808,
+    "height": 1200,
+    "scale": 1,
+    "sha256": "18608ebce2267456cb722ccdda2d51be8f313dc80b318749515f680e1d0bd555"
+  },
+  "warnings": [
+    {
+      "code": "backend-fallback",
+      "message": "grim -T did not match the temporary terminal; captured its validated geometry without changing focus"
+    },
+    {
+      "code": "post-capture-redaction",
+      "message": "Workstation username redacted to '_user' in text/ANSI/state/manifest after capture; the published PNG was re-rendered headlessly from the redacted ANSI, so its dimensions and hash differ from the original live capture. Dimensions and SHA-256 values in this manifest describe the published artifacts."
+    }
+  ],
+  "errors": [],
+  "artifacts": [
+    {
+      "kind": "terminal-text",
+      "path": "../uiux-captures/reversa-alias-conflict-warning-80x24.txt",
+      "media_type": "text/plain",
+      "sha256": "29d5a3160afd839eaa5bb0a03b85bcdac79e0d2eec24c30a99c9fb3db9a5bcb7"
+    },
+    {
+      "kind": "terminal-ansi",
+      "path": "../uiux-captures/reversa-alias-conflict-warning-80x24.ansi",
+      "media_type": "text/plain",
+      "sha256": "994f2d7ec6053f9c4067ebff698c488bd0bcab70bcb77a734881ae2ac8812189"
+    },
+    {
+      "kind": "terminal-state",
+      "path": "reversa-alias-conflict-warning-80x24.json",
+      "media_type": "application/json",
+      "sha256": "7952062f6cf9c206deda6a439d4e861a2dac2d485a3504750ae53c738a9487bb"
+    },
+    {
+      "kind": "screenshot",
+      "path": "../uiux-screenshots/reversa-alias-conflict-warning-80x24.png",
+      "media_type": "image/png",
+      "sha256": "18608ebce2267456cb722ccdda2d51be8f313dc80b318749515f680e1d0bd555"
+    }
+  ]
+}

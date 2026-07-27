@@ -1,0 +1,50 @@
+
+ [38;2;255;255;0mWarning: No models available. Use /login to log into a provider via OAuth or API key. See:
+[39m [38;2;255;255;0m  /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/providers.md
+[39m [38;2;255;255;0m  /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/models.md[39m
+
+[38;2;80;80;80m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[39m/reversa[7m [0m
+[38;2;80;80;80m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[38;2;138;190;183m→ reversa                         [t] Ponto de entrada principal do Reversa. Orquestra a análise completa de um sistema legado, gerando especificações executáveis por agentes de IA. Use quando o usu[39m
+  reversa-cbm[38;2;128;128;128m                     [t] Status/refresh/enable/disable do code intelligence (codebase-memory).[39m
+  reversa-adjudicator[38;2;128;128;128m             [t] Adjudica findings independentes do Reversa contra a evidência original, deduplica problemas, aceita ou rejeita cada finding, corrige somente documentação gerenc[39m
+  reversa-agents-help[38;2;128;128;128m             [t] Explica com analogias o que cada agente do Reversa faz e quando usá-lo. Ative com /reversa-agents-help.[39m
+  reversa-archaeologist[38;2;128;128;128m           [t] Analisa profundamente o código do projeto legado módulo a módulo — extrai algoritmos, fluxos de controle, estruturas de dados e dicionário de dados. Use na fase[39m
+[38;2;128;128;128m  (1/124)[39m
+[38;2;102;102;102m~/dev/pi-reversa (main)[39m
+[38;2;102;102;102m0.0%/0 (auto)                                                                                                                                                                                    unknown
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

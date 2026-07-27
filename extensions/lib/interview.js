@@ -1,6 +1,49 @@
 import { PIPELINE_IDS, PIPELINES } from "./pipelines.js";
 
 /**
+ * Pipeline-specific interview blocks. Each pipeline needs different answers:
+ * discovery decides documentation depth and spec layout, migrate needs the
+ * target stack and cutover shape, docs needs the reader and visual profile.
+ *
+ * @param {string} pipeline
+ * @returns {string[]}
+ */
+function pipelineBlocks(pipeline) {
+  if (pipeline === "migrate") {
+    return [
+      "**Bloco 2 — alvo da migração** (`target_stack`, obrigatório): pergunte qual stack alvo (linguagem, framework e runtime) a migração deve produzir. Ofereça as hipóteses mais prováveis para o legado em questão; o usuário digita o valor real pela linha de texto livre. Sem essa resposta o pipeline falha logo no preflight.",
+      "",
+      "**Bloco 3 — forma da migração**, três respostas na mesma chamada:",
+      "- `migration_scope`: `Total` (reescrita completa) → `total`; `Incremental` (por ondas) → `incremental`.",
+      "- `cutover_strategy`: `Big bang` → `big-bang`; `Strangler` (substituição gradual) → `strangler`; `Paralelo` (sistemas coexistindo) → `paralelo`.",
+      "- `constraints` (opcional): restrições de prazo, compliance, banco ou integrações que a migração não pode quebrar.",
+    ];
+  }
+  if (pipeline === "docs") {
+    return [
+      "**Bloco 2 — público e profundidade**, duas respostas na mesma chamada:",
+      "- `reader_profile`: `Novo dev` → `novo_dev`; `Stakeholder` → `stakeholder`; `Auditor` → `auditor`.",
+      "- `docs_depth`: `Visão geral` → `overview`; `Completo` → `full`; `Seleção de features` → `features_selection`.",
+      "",
+      "**Bloco 3 — estilo visual** (`visual_style`): `Sóbrio` → `sober`; `Premium` → `premium`; `Denso` → `dense`; `Exploratório` → `exploratory`.",
+    ];
+  }
+  return [
+    "**Bloco 2 — nível de documentação** (`doc_level`):",
+    "- `Essencial` (padrão): artefatos principais (code-analysis, domain, architecture, specs SDD). Ideal para projetos simples.",
+    "- `Completo`: diagramas C4, ERD, ADRs, OpenAPI e matrizes de rastreabilidade. Recomendado para a maioria dos projetos.",
+    "- `Detalhado`: máxima profundidade, flowcharts por função, ADRs expandidos, deployment, revisão cruzada obrigatória.",
+    "",
+    "**Bloco 3 — organização das specs** (`specs_choice`). O widget aceita no máximo 4 opções, então ofereça:",
+    "- `Automática` (padrão): aceitar a sugestão que o Scout fizer após mapear o projeto → `auto`",
+    "- `Por módulo` → `module`",
+    "- `Por caso de uso` → `use-case`",
+    "- `Híbrida` (módulo na raiz, casos de uso aninhados) → `hybrid`",
+    "Se o usuário digitar texto livre pedindo endpoint, features ou pastas customizadas, mapeie para `endpoint`, `feature` ou `custom` antes de chamar a ferramenta. Para `custom`, colete também os nomes das pastas de primeiro nível e passe em `custom_folders`.",
+  ];
+}
+
+/**
  * Build the launcher prompt for `/reversa-auto`.
  *
  * The parent model does exactly two things: run one interview, then call
@@ -26,8 +69,19 @@ export function buildLauncherPrompt({ askToolAvailable, pipeline, state = {}, sp
   track("chat_language", state.chat_language);
   track("doc_language", state.doc_language);
   track("project", state.project);
-  track("doc_level", state.doc_level);
-  track("specs_choice", state.specs_choice ?? specs.granularity);
+  if (pipeline === "migrate") {
+    track("target_stack", state.target_stack);
+    track("migration_scope", state.migration_scope);
+    track("cutover_strategy", state.cutover_strategy);
+    track("constraints", state.constraints);
+  } else if (pipeline === "docs") {
+    track("reader_profile", state.reader_profile);
+    track("docs_depth", state.docs_depth);
+    track("visual_style", state.visual_style);
+  } else {
+    track("doc_level", state.doc_level);
+    track("specs_choice", state.specs_choice ?? specs.granularity);
+  }
 
   const askingBlock = askToolAvailable
     ? [
@@ -60,17 +114,7 @@ export function buildLauncherPrompt({ askToolAvailable, pipeline, state = {}, sp
     "",
     "**Bloco 1 — dados de instalação** (só se `user_name` estiver vazio): nome do usuário, idioma do chat, idioma das especificações e nome do projeto. Colete os quatro na mesma chamada; para os idiomas ofereça `pt-BR` e `en-US` como opções, e para nome de usuário e nome do projeto ofereça as hipóteses mais prováveis — o usuário digita o valor real pela linha de texto livre do próprio widget.",
     "",
-    "**Bloco 2 — nível de documentação** (`doc_level`):",
-    "- `Essencial` (padrão): artefatos principais (code-analysis, domain, architecture, specs SDD). Ideal para projetos simples.",
-    "- `Completo`: diagramas C4, ERD, ADRs, OpenAPI e matrizes de rastreabilidade. Recomendado para a maioria dos projetos.",
-    "- `Detalhado`: máxima profundidade, flowcharts por função, ADRs expandidos, deployment, revisão cruzada obrigatória.",
-    "",
-    "**Bloco 3 — organização das specs** (`specs_choice`). O widget aceita no máximo 4 opções, então ofereça:",
-    "- `Automática` (padrão): aceitar a sugestão que o Scout fizer após mapear o projeto → `auto`",
-    "- `Por módulo` → `module`",
-    "- `Por caso de uso` → `use-case`",
-    "- `Híbrida` (módulo na raiz, casos de uso aninhados) → `hybrid`",
-    "Se o usuário digitar texto livre pedindo endpoint, features ou pastas customizadas, mapeie para `endpoint`, `feature` ou `custom` antes de chamar a ferramenta. Para `custom`, colete também os nomes das pastas de primeiro nível e passe em `custom_folders`.",
+    ...pipelineBlocks(pipeline),
     "",
     "Não pergunte sobre `answer_mode`: o modo autônomo sempre registra dúvidas em `questions.md`.",
     "",
@@ -97,5 +141,5 @@ export function parsePipelineArg(args) {
   const value = args.trim().toLowerCase();
   if (!value) return { pipeline: "discovery" };
   if (PIPELINE_IDS.includes(value)) return { pipeline: value };
-  return { error: `Pipeline desconhecido: "${value}". Valores válidos: ${PIPELINE_IDS.join(", ")}.` };
+  return { error: `Unknown pipeline: "${value}". Valid values: ${PIPELINE_IDS.join(", ")}.` };
 }

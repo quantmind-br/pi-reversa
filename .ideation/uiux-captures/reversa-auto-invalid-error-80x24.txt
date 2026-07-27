@@ -1,0 +1,24 @@
+
+ Warning: No models available. Use /login to log into a provider via OAuth or
+ API key. See:
+
+ /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/p
+ roviders.md
+
+ /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/m
+ odels.md
+
+ Error: Pipeline desconhecido: "invalid". Valores válidos: discovery, migrate,
+ docs.
+
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+~/dev/pi-reversa (main)
+0.0%/0 (auto)                                                            unknown
+
+
+
+
+
+

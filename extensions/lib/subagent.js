@@ -48,8 +48,10 @@ async function loadSdk() {
  * @param {string} [options.thinkingLevel]
  * @param {string[]} options.allowedRoots
  * @param {AbortSignal} [options.signal]
- * @param {(event: { type: string, name?: string }) => void} [options.onEvent]
+ * @param {(event: { type: string, name?: string, tokens?: number }) => void} [options.onEvent]
  * @param {any} [options.codeIntelSession]
+ * @param {string} [options.stageId] pipeline stage id; identity seam for tests
+ * @param {string} [options.runKey] fan-out run key (`stage:item`) when sharded
  * @param {object} [deps] injection seam for tests
  * @returns {Promise<{ text: string, stopReason: string, errorMessage?: string, usage: any, cost: number, messageCount: number, violations?: any[] }>}
  */
@@ -97,7 +99,10 @@ export async function runSubagent(
   const unsubscribe = onEvent
     ? session.subscribe((event) => {
         if (event.type === "tool_execution_start") onEvent({ type: event.type, name: event.toolName });
-        else if (event.type === "message_end") onEvent({ type: event.type });
+        // Same field `summarize` totals below, so live and final counts agree.
+        else if (event.type === "message_end") {
+          onEvent({ type: event.type, tokens: event.message?.usage?.totalTokens ?? 0 });
+        }
       })
     : undefined;
 

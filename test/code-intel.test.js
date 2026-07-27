@@ -40,9 +40,9 @@ test('migrate pipeline declares two-phase designer and screen translator', () =>
   assert.ok(ids.includes('screen-translator-generation'));
 });
 
-test('docs pipeline has controller vendor/smoke stages', () => {
+test('docs pipeline has controller config/vendor/smoke stages', () => {
   const ids = PIPELINES.docs.stages.map((stage) => stage.id);
-  assert.deepEqual(ids.slice(0, 1), ['docs-vendor']);
+  assert.deepEqual(ids.slice(0, 2), ['docs-config', 'docs-vendor']);
   assert.ok(ids.includes('docs-smoke'));
 });
 

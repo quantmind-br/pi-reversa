@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "producer": "screenshot-master/1.0.0",
+  "run_id": "20260727T111030Z-tui-reversa-palette-tail-wrap-200x50",
+  "kind": "tui",
+  "status": "complete",
+  "created_at": "2026-07-27T11:10:31Z",
+  "backend": "tui-live-grim-geometry+fallback (text/ANSI/state); headless aha+chromium re-render (published PNG)",
+  "source": {
+    "type": "TUI",
+    "target": {
+      "session": "ssm-env-1785150513501",
+      "executable": "/usr/bin/env",
+      "cwd": "/home/_user/dev/pi-reversa",
+      "cols": 200,
+      "rows": 50,
+      "term": "xterm-256color",
+      "label": "reversa-palette-tail-wrap-200x50"
+    }
+  },
+  "capture": {
+    "image": "../uiux-screenshots/reversa-palette-tail-wrap-200x50.png",
+    "width": 1960,
+    "height": 1200,
+    "scale": 1,
+    "sha256": "128b0efc827205a94067676c46872decefc7443fecf94ab64f79f4a0687b3dc9"
+  },
+  "warnings": [
+    {
+      "code": "backend-fallback",
+      "message": "grim -T did not match the temporary terminal; captured its validated geometry without changing focus"
+    },
+    {
+      "code": "post-capture-redaction",
+      "message": "Workstation username redacted to '_user' in text/ANSI/state/manifest after capture; the published PNG was re-rendered headlessly from the redacted ANSI, so its dimensions and hash differ from the original live capture. Dimensions and SHA-256 values in this manifest describe the published artifacts."
+    }
+  ],
+  "errors": [],
+  "artifacts": [
+    {
+      "kind": "terminal-text",
+      "path": "../uiux-captures/reversa-palette-tail-wrap-200x50.txt",
+      "media_type": "text/plain",
+      "sha256": "606341f859bdbf753fb41b533cc8ee1410c9ca67455fd2465b005782185272ab"
+    },
+    {
+      "kind": "terminal-ansi",
+      "path": "../uiux-captures/reversa-palette-tail-wrap-200x50.ansi",
+      "media_type": "text/plain",
+      "sha256": "af967cfaeca8bcde2d9a6c3b220a631fc3aebfd5547b3a637a4afca147a2f7af"
+    },
+    {
+      "kind": "terminal-state",
+      "path": "reversa-palette-tail-wrap-200x50.json",
+      "media_type": "application/json",
+      "sha256": "23bc436834e724030b2359c4807bf17108d91335144deb331afcb0ccd9b8f5ea"
+    },
+    {
+      "kind": "screenshot",
+      "path": "../uiux-screenshots/reversa-palette-tail-wrap-200x50.png",
+      "media_type": "image/png",
+      "sha256": "128b0efc827205a94067676c46872decefc7443fecf94ab64f79f4a0687b3dc9"
+    }
+  ]
+}

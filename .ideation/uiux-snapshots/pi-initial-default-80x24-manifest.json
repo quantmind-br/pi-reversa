@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "producer": "screenshot-master/1.0.0",
+  "run_id": "20260727T110854Z-tui-pi-initial-default-80x24",
+  "kind": "tui",
+  "status": "complete",
+  "created_at": "2026-07-27T11:08:54Z",
+  "backend": "tui-live-grim-geometry+fallback (text/ANSI/state); headless aha+chromium re-render (published PNG)",
+  "source": {
+    "type": "TUI",
+    "target": {
+      "session": "ssm-env-1785150513501",
+      "executable": "/usr/bin/env",
+      "cwd": "/home/_user/dev/pi-reversa",
+      "cols": 80,
+      "rows": 24,
+      "term": "xterm-256color",
+      "label": "pi-initial-default-80x24"
+    }
+  },
+  "capture": {
+    "image": "../uiux-screenshots/pi-initial-default-80x24.png",
+    "width": 808,
+    "height": 1200,
+    "scale": 1,
+    "sha256": "acbcefc8e56d862948f9fc50d0912e53c6c17eae221f96ddca52ae26f2aa12ca"
+  },
+  "warnings": [
+    {
+      "code": "backend-fallback",
+      "message": "grim -T did not match the temporary terminal; captured its validated geometry without changing focus"
+    },
+    {
+      "code": "post-capture-redaction",
+      "message": "Workstation username redacted to '_user' in text/ANSI/state/manifest after capture; the published PNG was re-rendered headlessly from the redacted ANSI, so its dimensions and hash differ from the original live capture. Dimensions and SHA-256 values in this manifest describe the published artifacts."
+    }
+  ],
+  "errors": [],
+  "artifacts": [
+    {
+      "kind": "terminal-text",
+      "path": "../uiux-captures/pi-initial-default-80x24.txt",
+      "media_type": "text/plain",
+      "sha256": "a1fea610958c757182b933c18b135c903c90825d497624cd7bfbe1c14c2003ae"
+    },
+    {
+      "kind": "terminal-ansi",
+      "path": "../uiux-captures/pi-initial-default-80x24.ansi",
+      "media_type": "text/plain",
+      "sha256": "6504b9e48d66c12dadd63b6ca8b177e21a7702a14a12ed3d3caf0f7a1ee53d86"
+    },
+    {
+      "kind": "terminal-state",
+      "path": "pi-initial-default-80x24.json",
+      "media_type": "application/json",
+      "sha256": "90e44450d0de5a16d5dd020e072fde62920fde279b4b23342a2f980ea0a9c616"
+    },
+    {
+      "kind": "screenshot",
+      "path": "../uiux-screenshots/pi-initial-default-80x24.png",
+      "media_type": "image/png",
+      "sha256": "acbcefc8e56d862948f9fc50d0912e53c6c17eae221f96ddca52ae26f2aa12ca"
+    }
+  ]
+}

@@ -1,0 +1,1445 @@
+{
+  "type": "response",
+  "command": "get_commands",
+  "success": true,
+  "data": {
+    "commands": [
+      {
+        "name": "reversa-cbm",
+        "description": "Status/refresh/enable/disable do code intelligence (codebase-memory).",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa",
+        "description": "Ponto de entrada principal do Reversa. Orquestra a an\u00e1lise completa de um sistema legado, gerando especifica\u00e7\u00f5es execut\u00e1veis por agentes de IA. Use quando o usu\u00e1rio digitar \"/reversa\", \"reversa\", \"iniciar an\u00e1lise\" ou \"engenharia reversa\". \u00c9 o primeiro skill a ser chamado em qualquer sess\u00e3o.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-adjudicator",
+        "description": "Adjudica findings independentes do Reversa contra a evid\u00eancia original, deduplica problemas, aceita ou rejeita cada finding, corrige somente documenta\u00e7\u00e3o gerenciada e registra resolu\u00e7\u00e3o rastre\u00e1vel. Use ap\u00f3s as duas revis\u00f5es e a auditoria de evid\u00eancias no workflow unattended.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-agents-help",
+        "description": "Explica com analogias o que cada agente do Reversa faz e quando us\u00e1-lo. Ative com /reversa-agents-help.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-archaeologist",
+        "description": "Analisa profundamente o c\u00f3digo do projeto legado m\u00f3dulo a m\u00f3dulo \u2014 extrai algoritmos, fluxos de controle, estruturas de dados e dicion\u00e1rio de dados. Use na fase de escava\u00e7\u00e3o de uma an\u00e1lise de engenharia reversa, ap\u00f3s o reversa-scout.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-architect",
+        "description": "Sintetiza a an\u00e1lise do projeto legado em documenta\u00e7\u00e3o arquitetural completa \u2014 diagramas C4, ERD completo, mapa de integra\u00e7\u00f5es e Spec Impact Matrix. Use na fase de interpreta\u00e7\u00e3o ap\u00f3s o reversa-detective.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-arquitetura-3d",
+        "description": "Cria visualiza\u00e7\u00f5es 3D interativas de arquitetura de software usando Three.js, gerando HTML standalone com cenas naveg\u00e1veis por c\u00e2mera livre. Use esta skill sempre que o usu\u00e1rio pedir para visualizar arquitetura, m\u00f3dulos, depend\u00eancias, camadas ou hierarquia de chamadas em 3D. Deve ser ativada quando o usu\u00e1rio mencionar termos como \"code city\", \"cidade de c\u00f3digo\", \"arquitetura 3D\", \"dependency graph 3D\", \"module map 3D\", \"layer stack 3D\", \"call graph 3D\", \"architecture tour\", \"tour pela arquitetura\", \"visualizar software em 3D\", \"Three.js\" no contexto de software, ou pedir para explorar a estrutura de um sistema com c\u00e2mera 3D. Funciona com JSON de m\u00f3dulos (nome, pasta, LOC, complexidade) e depend\u00eancias (grafo orientado). Sempre gera HTML standalone completo. Quando rodada pelo Time Reversa Docs, usa Three.js servido localmente em assets/vendor/ (offline-first).\n",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-audit",
+        "description": "Auditoria leitora estrita. Compara requirements, roadmap e actions, reporta inconsist\u00eancias com severidade CRITICAL, HIGH, MEDIUM, LOW. JAMAIS altera os artefatos analisados. Use quando o usu\u00e1rio digitar \"/reversa-audit\", \"reversa-audit\" ou pedir para fazer cross-check entre os tr\u00eas documentos da feature ativa. Etapa opcional do ciclo forward.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-autonomous",
+        "description": "Modo aut\u00f4nomo do Reversa. Executa a mesma sequ\u00eancia de agentes do /reversa de ponta a ponta, sem paradas intermedi\u00e1rias, concentrando todas as perguntas em uma entrevista \u00fanica no in\u00edcio. Projetado para sess\u00f5es sem supervis\u00e3o (ex. modo YOLO do Claude Code com permiss\u00f5es autom\u00e1ticas). Use quando o usu\u00e1rio digitar \"/reversa-autonomous\", \"reversa autonomous\", \"reversa aut\u00f4nomo\", \"rodar reversa sem parar\" ou pedir a an\u00e1lise completa sem interrup\u00e7\u00f5es.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-clarify",
+        "description": "Gera at\u00e9 cinco perguntas dirigidas para resolver pontos amb\u00edguos do requirements e integra as respostas no documento. Use quando o usu\u00e1rio digitar \"/reversa-clarify\", \"reversa-clarify\", \"esclarecer d\u00favidas\" ou pedir para tirar pontos abertos do requirements antes de planejar. Etapa opcional do ciclo forward, entre `/reversa-requirements` e `/reversa-plan`.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-coding",
+        "description": "Conduz a execu\u00e7\u00e3o do actions.md em c\u00f3digo. Atualiza checkboxes para [X], escreve progress.jsonl, gera legacy-impact.md e regression-watch.md. Funciona ancorado no legado (extra\u00e7\u00e3o do Discovery em `.specs/`) ou em greenfield (prd.md + specs SDD do `/reversa-new`). Use quando o usu\u00e1rio digitar \"/reversa-coding\", \"reversa-coding\", \"executar plano\" ou pedir para come\u00e7ar a codar a feature ativa. \u00daltimo skill do ciclo forward, depois de `/reversa-to-do` (e opcionalmente `/reversa-audit` ou `/reversa-quality`).",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-consistency-reviewer",
+        "description": "Revisor independente de consist\u00eancia global do Reversa. Procura contradi\u00e7\u00f5es entre units, requisitos, design, tasks, diagramas, OpenAPI, banco, UI e matrizes; valida links e nomenclatura. Produz findings imut\u00e1veis sem alterar documenta\u00e7\u00e3o.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-coverage-reviewer",
+        "description": "Revisor independente de completude do Reversa. Compara invent\u00e1rio, m\u00f3dulos, rotas, banco, UI, testes e arquivos eleg\u00edveis contra as specs produzidas, encontrando \u00e1reas n\u00e3o documentadas e requisitos sem cobertura. Produz findings imut\u00e1veis e n\u00e3o altera documenta\u00e7\u00e3o.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-curator",
+        "description": "Segundo agente do Time de Migra\u00e7\u00e3o. Decide o que migra, o que descarta e o que precisa de decis\u00e3o humana, com base nas specs do legado, no crit\u00e9rio do brief e no paradigma escolhido. Produz target_business_rules.md e discard_log.md. Ativa\u00e7\u00e3o: /reversa-curator (geralmente invocado por /reversa-migrate).",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-data-master",
+        "description": "Documenta completamente o banco de dados do projeto legado \u2014 tabelas, relacionamentos, constraints, triggers, procedures e ERD completo. Use quando DDL, migrations, modelos ORM ou acesso ao banco estiverem dispon\u00edveis.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-debugger",
+        "description": "Registrador de bugs do Reversa. Faz intake, triagem, dedupe, classifica\u00e7\u00e3o, rastreabilidade SPEC\u2194CODE\u2194TEST\u2194BUG e correla\u00e7\u00e3o BUG\u2194BUG, criando a pasta \u00fanica do bug dentro da pasta agregadora do contexto (feature/m\u00f3dulo/caso de uso) em `<bugs_folder>/<contexto>/bugs/`. Nunca corrige. Use quando o usu\u00e1rio digitar \"/reversa-debugger\", \"reversa-debugger\", \"registrar bug\", \"reportar erro\", \"documentar um bug\", ou reclamar de um defeito com frase natural (\"deu pau no sistema de cr\u00e9dito\", \"o carrinho t\u00e1 com problema de c\u00e1lculo\", \"a tela X quebrou\"). Ponto de entrada do Time Reversa Bugs; a corre\u00e7\u00e3o \u00e9 ato separado via `/reversa-debugger-fix`.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-debugger-debate",
+        "description": "Debate multiagente do Time Reversa Bugs, em \u00e9pocas fixas com juiz isolado, para decidir diagn\u00f3stico, estrat\u00e9gia de corre\u00e7\u00e3o ou veredito de spec de um bug registrado. N solvers independentes debatem por R rodadas com snapshot s\u00edncrono; um juiz que n\u00e3o participou sintetiza. Sempre opt-in, com custo estimado antes. Pode incluir outros harness (Codex, Gemini CLI, OpenCode) como debatedores, somente com aceite expl\u00edcito do usu\u00e1rio. Use quando o usu\u00e1rio digitar \"/reversa-debugger-debate\", \"reversa-debugger-debate\", \"abrir debate sobre o bug\", \"debater a corre\u00e7\u00e3o\" ou aceitar a oferta de debate do /reversa-debugger-fix.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-debugger-fix",
+        "description": "Corretor de bugs do Reversa, orquestrador do ciclo de vida do defeito. Reproduz, investiga causa raiz com evid\u00eancias, oferece debate multiagente opt-in, cria testes de reprodu\u00e7\u00e3o e regress\u00e3o, aplica o Correction Change Set com diffs aprovados em dois gates, d\u00e1 o veredito de spec (com adendo versionado quando a spec muda) e fecha conforme a closure policy. Use quando o usu\u00e1rio digitar \"/reversa-debugger-fix\", \"reversa-debugger-fix\", \"corrigir o bug\", \"consertar o BUG-XXX\" ou pedir a corre\u00e7\u00e3o de um bug registrado. Exige bug registrado via `/reversa-debugger`.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-debugger-graph",
+        "description": "Gerador de views do Time Reversa Bugs. Varre os bug.md (source of truth), valida invariantes e regenera as proje\u00e7\u00f5es: \u00edndice por status/phase, cat\u00e1logo compacto, matriz esparsa de rela\u00e7\u00f5es BUG\u2194BUG, grafo mermaid com clusters e impact score, e a matriz de rastreabilidade BUG\u2194SPEC nas duas pontas (incluindo o espelho em `.specs/traceability/bugs.md`). Use quando o usu\u00e1rio digitar \"/reversa-debugger-graph\", \"reversa-debugger-graph\", \"panorama dos bugs\", \"grafo de bugs\", \"regenerar \u00edndice de bugs\" ou pedir a matriz de rastreabilidade de bugs.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-depth-inspection",
+        "description": "Pente-fino do Time Reversa Bugs. Dada uma feature problem\u00e1tica, monta o mapa spec\u2192c\u00f3digo\u2192testes\u2192dados e varre com lentes especializadas (conformidade com spec, fluxo de dados, contratos, estados de erro, cobertura de testes, concorr\u00eancia), em subagentes paralelos quando o harness suportar. S\u00d3 diagnostica: achados confirmados viram bugs registrados com rastreabilidade; nada \u00e9 corrigido. Use quando o usu\u00e1rio digitar \"/reversa-depth-inspection\", \"reversa-depth-inspection\", \"pente-fino na feature\", \"inspe\u00e7\u00e3o profunda\", \"essa feature vive dando problema\" ou pedir varredura completa de uma \u00e1rea problem\u00e1tica.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-design-system",
+        "description": "Extrai e documenta o sistema de design do projeto legado \u2014 paleta de cores, tipografia, espa\u00e7amentos, tokens e componentes a partir de CSS, arquivos de tema e screenshots. Use quando arquivos de estilo ou screenshots de interface estiverem dispon\u00edveis.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-designer",
+        "description": "Quarto agente do Time de Migra\u00e7\u00e3o. Opera em duas fases. Fase 1: detecta a topologia do legado, sempre prop\u00f5e uma topologia moderna alternativa e produz topology_decision.md (com pausa humana para aprova\u00e7\u00e3o). Fase 2: desenha as specs do sistema novo sob a topologia escolhida, produzindo target_architecture.md, target_domain_model.md, target_data_model.md e data_migration_plan.md, com rastreabilidade total para o legado. Ativa\u00e7\u00e3o: /reversa-designer (geralmente invocado por /reversa-migrate).",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-detective",
+        "description": "Extrai conhecimento de neg\u00f3cio impl\u00edcito do projeto legado \u2014 regras de neg\u00f3cio, ADRs retroativos via Git, m\u00e1quinas de estado e matriz de permiss\u00f5es. Use na fase de interpreta\u00e7\u00e3o de uma an\u00e1lise de engenharia reversa.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-docs",
+        "description": "Orquestrador do Time Reversa Docs. Gera um mini-site HTML autocontido em <docs_folder>/ com arquitetura 3D, dashboards, gloss\u00e1rio, deck e p\u00e1ginas por feature, a partir do conhecimento j\u00e1 extra\u00eddo pelo core do Reversa. Ative com /reversa-docs, reversa-docs, gerar documenta\u00e7\u00e3o visual, mini-site do projeto, documenta\u00e7\u00e3o interativa.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-docs-analyst",
+        "description": "Analista do Time Reversa Docs. Produz as p\u00e1ginas de dados quantitativos do mini-site: dashboard de m\u00e9tricas com Highcharts (treemap LOC, barras complexidade, sankey depend\u00eancias, histograma) e timeline interativa de eventos do projeto. Ative com /reversa-docs-analyst, reversa-docs-analyst, regenerar m\u00e9tricas, refazer timeline, dashboard do projeto.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-docs-mapper",
+        "description": "Mapeador do Time Reversa Docs. Produz as p\u00e1ginas de estrutura espacial do mini-site: arquitetura 3D (Code City via Three.js), module map 2D (force-directed via D3), e topologia side-by-side (legado vs moderno vs h\u00edbrido). Ative com /reversa-docs-mapper, reversa-docs-mapper, regenerar arquitetura, refazer mapa de m\u00f3dulos, code city do projeto.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-docs-publisher",
+        "description": "Editor-chefe do Time Reversa Docs. Gera index.html com hero e selo \u00fanico do projeto, injeta mini-selo nas demais p\u00e1ginas, faz auto-discovery de HTMLs auxiliares produzidos por outros agentes do core, valida links e grava telemetria final. Ative com /reversa-docs-publisher, reversa-docs-publisher, regenerar index, refazer selo, atualizar \u00edndice.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-docs-storyteller",
+        "description": "Narrador do Time Reversa Docs. Produz gloss\u00e1rio interativo (Concept Explainer com busca cliente-side), slide deck naveg\u00e1vel (6 a 10 slides) e uma p\u00e1gina detalhada por feature em padr\u00e3o How a Feature Works. Ative com /reversa-docs-storyteller, reversa-docs-storyteller, regenerar gloss\u00e1rio, refazer deck, p\u00e1ginas por feature.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-domain-reviewer",
+        "description": "Revisor independente de fidelidade sem\u00e2ntica do Reversa. Reabre c\u00f3digo, testes, banco, configura\u00e7\u00e3o e Git para verificar regras de neg\u00f3cio, estados, permiss\u00f5es, c\u00e1lculos e contratos documentados. Produz findings imut\u00e1veis e n\u00e3o altera specs.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-drafter",
+        "description": "Agente Drafter do time Code New Project Agents. Sintetiza `ideation.md` e `personas.md` em um PRD completo (problema, m\u00e9tricas, escopo, n\u00e3o-objetivos, restri\u00e7\u00f5es, riscos). Use quando o usu\u00e1rio digitar \"/reversa-drafter\", \"reversa-drafter\" ou quando invocado pelo orquestrador `/reversa-new`. Produz `.specs/prd.md`.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-especialista-d3",
+        "description": "Engenheiro de Visualiza\u00e7\u00e3o de Dados S\u00eanior especializado em D3.js (v7+). Gera HTML standalone com gr\u00e1ficos D3 (force-directed, hier\u00e1rquicos, sankey, treemap). Use quando o usu\u00e1rio pedir \"module map\", \"force-directed\", \"dependency graph 2D\", \"tree\", \"sankey\", ou visualiza\u00e7\u00e3o 2D de rela\u00e7\u00f5es.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-evidence-auditor",
+        "description": "Audita de forma independente a evid\u00eancia da documenta\u00e7\u00e3o Reversa. Valida Claim IDs, Evidence IDs, paths, linhas, hashes, cobertura e classifica\u00e7\u00f5es de confian\u00e7a; produz findings imut\u00e1veis e nunca altera specs. Use pelo runner unattended antes e depois da adjudica\u00e7\u00e3o, ou quando o usu\u00e1rio pedir auditoria de evid\u00eancias.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-extract-soul",
+        "description": "Extrai a alma do projeto legado em uma \u00fanica Spec s\u00edntese (soul.md), reunindo prop\u00f3sito, entidades centrais e decis\u00f5es fundadoras. Roda logo ap\u00f3s o Scout, \u00e9 leve e n\u00e3o substitui Archaeologist/Detective. Ative com /reversa-extract-soul, reversa-extract-soul, extrair alma, soul of the project, ess\u00eancia do sistema.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-forward",
+        "description": "Orquestrador do pipeline de evolu\u00e7\u00e3o do Reversa. Detecta o est\u00e1gio f\u00edsico da feature ativa em `<forward_folder>/` e sugere o pr\u00f3ximo agente do ciclo forward (requirements, clarify, plan, to-do, audit, quality, coding, sync). Use quando o usu\u00e1rio digitar \"/reversa-forward\", \"reversa-forward\", \"iniciar evolu\u00e7\u00e3o\", \"iniciar pipeline forward\" ou pedir para conduzir o ciclo de uma feature do zero ao c\u00f3digo. N\u00e3o escreve artefatos de feature por conta pr\u00f3pria, apenas roteia.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-highcharts-visualizer",
+        "description": "Cria visualiza\u00e7\u00f5es de dados interativas e profissionais usando Highcharts.js, gerando HTML standalone com gr\u00e1ficos animados, responsivos e acess\u00edveis. Use este skill sempre que o usu\u00e1rio pedir para criar gr\u00e1ficos, charts, dashboards, visualiza\u00e7\u00f5es de dados, ou qualquer representa\u00e7\u00e3o visual de dados num\u00e9ricos/categ\u00f3ricos. Deve ser usado quando o usu\u00e1rio mencionar termos como \"gr\u00e1fico\", \"chart\", \"dashboard\", \"highcharts\", \"visualiza\u00e7\u00e3o de dados\", \"gr\u00e1fico de linhas\", \"barras\", \"pizza\", \"scatter\", \"heatmap\", \"treemap\", \"gauge\", \"stock chart\", \"mapa\", \"gantt\", \"sankey\", \"funnel\", ou quando fornecer dados (CSV, JSON, tabela, planilha) pedindo representa\u00e7\u00e3o visual. Tamb\u00e9m deve ser ativado quando o usu\u00e1rio pedir gr\u00e1ficos bonitos, interativos, animados, com tooltip, drill-down, ou export\u00e1veis. Funciona com dados inline, CSV, JSON, e arquivos de dados. Sempre gera HTML standalone completo e funcional.\n",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-ideator",
+        "description": "Agente Ideator do time Code New Project Agents. Conduz brainstorm estruturado a partir de um brief inicial, com 6 perguntas divergentes (problema raiz, valor, alternativas, p\u00fablico-alvo bruto, m\u00e9tricas de sucesso, premissas perigosas). Use quando o usu\u00e1rio digitar \"/reversa-ideator\", \"reversa-ideator\" ou quando invocado pelo orquestrador `/reversa-new`. Produz `.specs/ideation.md`.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-image-prompt-json",
+        "description": "Cria prompts JSON estruturados para gera\u00e7\u00e3o de imagens de alta qualidade com est\u00e9tica luxuosa e cinematogr\u00e1fica. Use esta skill sempre que o usu\u00e1rio quiser gerar um prompt de imagem, criar uma foto de produto, montar um prompt para IA de imagem, fotografar produto virtualmente, criar imagem de comida, bebida, cosm\u00e9tico, joia, moda ou qualquer item visual. Tamb\u00e9m deve ser ativada quando o usu\u00e1rio mencionar: \"prompt para imagem\", \"gerar imagem de produto\", \"foto de produto com IA\", \"prompt para Midjourney/DALL-E/Flux\", \"fotografar produto\", ou pedir para \"montar um prompt JSON de imagem\".\n",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-inspector",
+        "description": "Quinto agente do Time de Migra\u00e7\u00e3o. Define como provar que o sistema novo \u00e9 comportamentalmente equivalente ao legado, com crit\u00e9rios adaptados ao paradigma escolhido. Produz parity_specs.md e parity_tests/*.feature em Gherkin. Ativa\u00e7\u00e3o: /reversa-inspector (geralmente invocado por /reversa-migrate).",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-migrate",
+        "description": "Orquestrador do Time de Migra\u00e7\u00e3o do Reversa. Conduz o pipeline de migra\u00e7\u00e3o ap\u00f3s o `/reversa` ter populado o .specs/. Coleta brief, invoca os 6 agentes (Paradigm Advisor \u2192 Curator \u2192 Strategist \u2192 Designer \u2192 Screen Translator \u2192 Inspector) com pausas humanas, e gera handoff.md final. Use quando o usu\u00e1rio digitar `/reversa-migrate`, `reversa-migrate`, `migrar sistema`, `iniciar migra\u00e7\u00e3o`.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-n8n",
+        "description": "Gera specs SDD (workflow-overview, requirements, design) a partir de workflows do N8N exportados em JSON, preparando o terreno para reimplementa\u00e7\u00e3o em Python ou outra linguagem. Use quando o usu\u00e1rio tiver um arquivo JSON exportado do N8N e quiser document\u00e1-lo como spec ou portar para c\u00f3digo.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-new",
+        "description": "Orquestrador do time Code New Project Agents do Reversa. Conduz o pipeline greenfield, partindo de uma ideia em linguagem natural e produzindo brainstorm, personas, PRD e specs SDD em `.specs/`. Tem dois modos: guiado (passo a passo com CONTINUAR, termina nas specs) e expresso (entrevista \u00fanica no in\u00edcio e execu\u00e7\u00e3o de ponta a ponta, emendando no ciclo forward at\u00e9 o c\u00f3digo). Use quando o usu\u00e1rio digitar \"/reversa-new\", \"/reversa-new expresso\", \"reversa-new\", \"come\u00e7ar projeto novo\", \"criar projeto do zero\", \"da ideia ao c\u00f3digo\" ou pedir para iniciar um produto greenfield.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-paradigm-advisor",
+        "description": "Primeiro agente do Time de Migra\u00e7\u00e3o. Detecta o paradigma do sistema legado a partir das specs, infere o paradigma natural da stack alvo, alerta sobre gaps e for\u00e7a uma decis\u00e3o consciente do usu\u00e1rio. Produz paradigm_decision.md, leitura obrigat\u00f3ria de todos os agentes posteriores. Ativa\u00e7\u00e3o: /reversa-paradigm-advisor (geralmente invocado por /reversa-migrate).",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-plan",
+        "description": "Esbo\u00e7a a abordagem t\u00e9cnica como delta sobre o legado, gerando roadmap, investigation, data-delta, onboarding e interfaces da feature ativa. Use quando o usu\u00e1rio digitar \"/reversa-plan\", \"reversa-plan\", \"esbo\u00e7ar plano t\u00e9cnico\" ou pedir para virar requirements em desenho de solu\u00e7\u00e3o. Terceiro skill do ciclo forward, depois de `/reversa-requirements` e (opcionalmente) `/reversa-clarify`.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-pricing-estimate",
+        "description": "Combina profile de cobranca e size da feature ativa para produzir tres cenarios de preco lado a lado: Esforco, Valor e Faixa de Mercado. Use quando o usuario digitar \"/reversa-pricing-estimate\", \"reversa-pricing-estimate\", \"calcular preco\", \"quanto cobrar\" ou \"orcar feature\". Roda depois de `/reversa-pricing-profile` e `/reversa-pricing-size`.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-pricing-profile",
+        "description": "Conduz uma entrevista guiada de ate dez perguntas e gera o perfil de cobranca do usuario, com pais, moeda, senioridade normalizada, taxa hora, markup de projeto, regime tributario, modelo de cobranca e perfil de cliente. Use quando o usuario digitar \"/reversa-pricing-profile\", \"reversa-pricing-profile\", \"configurar perfil de cobranca\", \"definir taxa hora\" ou pedir para configurar precificacao no Reversa.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-pricing-size",
+        "description": "Mede o tamanho estrutural da feature ativa lendo requirements, duvidas, plan e tasks do ciclo forward, e gera size.json mais size.md com T-shirt sizing deterministico baseado em tasks e ajuste de risco. Use quando o usuario digitar \"/reversa-pricing-size\", \"reversa-pricing-size\", \"dimensionar feature\" ou \"calcular tamanho da feature\". Roda depois de `/reversa-to-do` e antes de `/reversa-pricing-estimate`.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-principles",
+        "description": "Cria ou atualiza os princ\u00edpios duradouros do projeto e propaga sugest\u00f5es de ajuste nos templates dependentes. Princ\u00edpios s\u00e3o raros, mudam pouco e influenciam todos os artefatos. Use quando o usu\u00e1rio digitar \"/reversa-principles\", \"reversa-principles\", \"definir princ\u00edpios\" ou pedir para criar/alterar/aposentar um princ\u00edpio do projeto. Pode rodar antes mesmo da primeira feature.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-quality",
+        "description": "Auditoria de clareza textual do requirements. Verifica se a prosa \u00e9 boa o bastante para gerar plano sem ambiguidade. N\u00c3O mistura com auditoria de testes de implementa\u00e7\u00e3o. Use quando o usu\u00e1rio digitar \"/reversa-quality\", \"reversa-quality\" ou pedir para revisar a qualidade do requirements antes de planejar. Etapa opcional do ciclo forward.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-reconstructor",
+        "description": "Gera um plano de reconstru\u00e7\u00e3o bottom-up a partir das specs do Reversa e executa cada tarefa sob demanda, uma por vez, preservando tokens. Use quando quiser reimplementar o software do zero a partir das especifica\u00e7\u00f5es geradas. Ativa\u00e7\u00e3o: /reversa-reconstructor",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-requirements",
+        "description": "Transforma uma ideia em linguagem natural num documento de requisitos completo, ancorado nos artefatos da pipeline reversa. Use quando o usu\u00e1rio digitar \"/reversa-requirements\", \"reversa-requirements\", \"quero levantar requisitos\" ou pedir para iniciar uma nova feature a partir de uma frase. Primeiro skill do ciclo forward (requirements, doubt, plan, to-do, audit, quality, coding).",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-researcher",
+        "description": "Agente Researcher do time Code New Project Agents. A partir de `ideation.md`, aprofunda o p\u00fablico-alvo em 1 a 3 personas estruturadas com jornadas. Use quando o usu\u00e1rio digitar \"/reversa-researcher\", \"reversa-researcher\" ou quando invocado pelo orquestrador `/reversa-new`. Produz `.specs/personas.md`.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-resume",
+        "description": "Retoma uma feature pausada (listada em paused-features de active-requirements.json) e a torna ativa. Use quando o usu\u00e1rio digitar \"/reversa-resume\", \"reversa-resume\", \"retomar feature pausada\" ou pedir para voltar a uma feature anterior. N\u00c3O cria features novas, apenas troca a ativa pela escolhida e (quando faz sentido) move a ativa atual para paused-features.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-reviewer",
+        "description": "Revisa criticamente as especifica\u00e7\u00f5es geradas pelo Reversa e produz findings imut\u00e1veis. Em modo unattended roda em passagem estrutural ou adversarial, sem alterar specs; o Adjudicator decide e aplica corre\u00e7\u00f5es. No modo guiado pode gerar perguntas, mas nunca autocorrige a documenta\u00e7\u00e3o revisada.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-scout",
+        "description": "Mapeia a superf\u00edcie do projeto legado \u2014 estrutura de pastas, linguagens, frameworks, depend\u00eancias e entry points. Use no in\u00edcio de uma an\u00e1lise de engenharia reversa para criar o invent\u00e1rio inicial do projeto.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-screen-translator",
+        "description": "Quinto agente do Time de Migra\u00e7\u00e3o. Traduz as telas do sistema legado em especifica\u00e7\u00f5es execut\u00e1veis, fechando a lacuna entre o cat\u00e1logo do design-system e o c\u00f3digo pronto. Opera em duas fases. Fase 1: detecta plataforma origem/alvo, apresenta os modos (literal, modernizado, h\u00edbrido) e exige decis\u00e3o humana, produzindo screen_modernization_decision.md. Fase 2: gera target_screens.md, screen_deviation_log.md e, quando o or\u00e1culo legado roda, golden files com manifest.yaml para o Inspector consumir. Ativa\u00e7\u00e3o: /reversa-screen-translator (geralmente invocado por /reversa-migrate, entre Designer e Inspector).",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-selo-generativo",
+        "description": "Cria selos visuais generativos seeded usando p5.js, gerando HTML standalone com canvas de arte algor\u00edtmica reprodut\u00edvel. Use esta skill sempre que o usu\u00e1rio pedir um selo, identidade visual de projeto, hero generativo, capa \u00fanica reprodut\u00edvel, ou artwork derivado de um hash. Deve ser ativada quando o usu\u00e1rio mencionar termos como \"selo\", \"selo generativo\", \"identidade visual do projeto\", \"hero capa\", \"artwork seeded\", \"Art Blocks style\", \"p5.js generativo\", \"capa reprodut\u00edvel\", \"selo de documenta\u00e7\u00e3o\" ou pedir um elemento decorativo \u00fanico e reprodut\u00edvel derivado de uma string. Funciona com qualquer string como seed (hash do soul.md, nome do projeto, ID arbitr\u00e1rio). Sempre gera HTML standalone com p5.js via CDN.\n",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-spec-sdd",
+        "description": "Agente final do time Code New Project Agents do Reversa. Decomp\u00f5e um PRD em componentes l\u00f3gicos e gera specs SDD (Spec-Driven Development) por componente, com score autom\u00e1tico de qualidade. Use quando o usu\u00e1rio digitar \"/reversa-spec-sdd\", \"reversa-spec-sdd\" ou quando invocado pelo orquestrador `/reversa-new`. L\u00ea `.specs/prd.md` e produz `.specs/sdd/<componente>.md`. Ao concluir, faz handoff para `/reversa-forward`. Tamb\u00e9m pode ser usado avulso para avaliar uma spec existente (modo de avalia\u00e7\u00e3o) ou para gerar spec \u00fanica a partir de qualquer entrada que o usu\u00e1rio forne\u00e7a. Entrega: arquivos `.md` no formato SDD com score de qualidade (0 a 100) e an\u00e1lise de gaps.\n",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-strategist",
+        "description": "Terceiro agente do Time de Migra\u00e7\u00e3o. Prop\u00f5e estrat\u00e9gias de migra\u00e7\u00e3o com trade-offs expl\u00edcitos, considerando brief, paradigma e apetite. Recomenda uma estrat\u00e9gia mas deixa a escolha como decis\u00e3o humana. Produz migration_strategy.md, risk_register.md e cutover_plan.md. Ativa\u00e7\u00e3o: /reversa-strategist (geralmente invocado por /reversa-migrate).",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-sync",
+        "description": "Converg\u00eancia p\u00f3s-coding do Reversa. Destila a feature entregue (requirements, legacy-impact, regression-watch) em um adendo dentro de `.specs/addenda/`, mantendo a extra\u00e7\u00e3o reversa representativa do sistema entre re-extra\u00e7\u00f5es, sem tocar nos artefatos originais. Use quando o usu\u00e1rio digitar \"/reversa-sync\", \"reversa-sync\", \"sincronizar specs\", \"converger a feature na extra\u00e7\u00e3o\" ou pedir para atualizar a extra\u00e7\u00e3o com a feature rec\u00e9m-codada. Passo opcional do ciclo forward, depois de `/reversa-coding`.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-to-do",
+        "description": "Decomp\u00f5e o roadmap em a\u00e7\u00f5es at\u00f4micas com IDs sequenciais, depend\u00eancias e marcador de paralelismo. Use quando o usu\u00e1rio digitar \"/reversa-to-do\", \"reversa-to-do\", \"decompor em tarefas\" ou pedir para virar o roadmap em uma lista execut\u00e1vel. Quarto skill do ciclo forward, depois de `/reversa-plan`.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-visor",
+        "description": "Documenta a interface do sistema legado a partir de screenshots \u2014 extrai componentes, layouts, fluxos de navega\u00e7\u00e3o e estados de tela. Use quando screenshots do sistema estiverem dispon\u00edveis, sem necessidade de o sistema estar em execu\u00e7\u00e3o.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-writer",
+        "description": "Gera especifica\u00e7\u00f5es execut\u00e1veis do sistema legado como contratos operacionais, em formato de pasta-por-unit com requirements.md, design.md e tasks.md. Use na fase de gera\u00e7\u00e3o de uma an\u00e1lise de engenharia reversa.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "reversa-auto",
+        "description": "Executa o pipeline Reversa de ponta a ponta com subagentes, sem paradas.",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/extensions/reversa.js",
+          "source": "cli",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "llama",
+        "description": "Manage llama.cpp router models",
+        "source": "extension",
+        "sourceInfo": {
+          "path": "<inline:llama.cpp>",
+          "source": "inline",
+          "scope": "temporary",
+          "origin": "top-level"
+        }
+      },
+      {
+        "name": "skill:reversa",
+        "description": "Ponto de entrada principal do Reversa. Orquestra a an\u00e1lise completa de um sistema legado, gerando especifica\u00e7\u00f5es execut\u00e1veis por agentes de IA. Use quando o usu\u00e1rio digitar \"/reversa\", \"reversa\", \"iniciar an\u00e1lise\" ou \"engenharia reversa\". \u00c9 o primeiro skill a ser chamado em qualquer sess\u00e3o.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa"
+        }
+      },
+      {
+        "name": "skill:reversa-adjudicator",
+        "description": "Adjudica findings independentes do Reversa contra a evid\u00eancia original, deduplica problemas, aceita ou rejeita cada finding, corrige somente documenta\u00e7\u00e3o gerenciada e registra resolu\u00e7\u00e3o rastre\u00e1vel. Use ap\u00f3s as duas revis\u00f5es e a auditoria de evid\u00eancias no workflow unattended.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-adjudicator/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-adjudicator"
+        }
+      },
+      {
+        "name": "skill:reversa-agents-help",
+        "description": "Explica com analogias o que cada agente do Reversa faz e quando us\u00e1-lo. Ative com /reversa-agents-help.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-agents-help/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-agents-help"
+        }
+      },
+      {
+        "name": "skill:reversa-archaeologist",
+        "description": "Analisa profundamente o c\u00f3digo do projeto legado m\u00f3dulo a m\u00f3dulo \u2014 extrai algoritmos, fluxos de controle, estruturas de dados e dicion\u00e1rio de dados. Use na fase de escava\u00e7\u00e3o de uma an\u00e1lise de engenharia reversa, ap\u00f3s o reversa-scout.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-archaeologist/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-archaeologist"
+        }
+      },
+      {
+        "name": "skill:reversa-architect",
+        "description": "Sintetiza a an\u00e1lise do projeto legado em documenta\u00e7\u00e3o arquitetural completa \u2014 diagramas C4, ERD completo, mapa de integra\u00e7\u00f5es e Spec Impact Matrix. Use na fase de interpreta\u00e7\u00e3o ap\u00f3s o reversa-detective.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-architect/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-architect"
+        }
+      },
+      {
+        "name": "skill:reversa-arquitetura-3d",
+        "description": "Cria visualiza\u00e7\u00f5es 3D interativas de arquitetura de software usando Three.js, gerando HTML standalone com cenas naveg\u00e1veis por c\u00e2mera livre. Use esta skill sempre que o usu\u00e1rio pedir para visualizar arquitetura, m\u00f3dulos, depend\u00eancias, camadas ou hierarquia de chamadas em 3D. Deve ser ativada quando o usu\u00e1rio mencionar termos como \"code city\", \"cidade de c\u00f3digo\", \"arquitetura 3D\", \"dependency graph 3D\", \"module map 3D\", \"layer stack 3D\", \"call graph 3D\", \"architecture tour\", \"tour pela arquitetura\", \"visualizar software em 3D\", \"Three.js\" no contexto de software, ou pedir para explorar a estrutura de um sistema com c\u00e2mera 3D. Funciona com JSON de m\u00f3dulos (nome, pasta, LOC, complexidade) e depend\u00eancias (grafo orientado). Sempre gera HTML standalone completo. Quando rodada pelo Time Reversa Docs, usa Three.js servido localmente em assets/vendor/ (offline-first).\n",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-arquitetura-3d/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-arquitetura-3d"
+        }
+      },
+      {
+        "name": "skill:reversa-audit",
+        "description": "Auditoria leitora estrita. Compara requirements, roadmap e actions, reporta inconsist\u00eancias com severidade CRITICAL, HIGH, MEDIUM, LOW. JAMAIS altera os artefatos analisados. Use quando o usu\u00e1rio digitar \"/reversa-audit\", \"reversa-audit\" ou pedir para fazer cross-check entre os tr\u00eas documentos da feature ativa. Etapa opcional do ciclo forward.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-audit/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-audit"
+        }
+      },
+      {
+        "name": "skill:reversa-autonomous",
+        "description": "Modo aut\u00f4nomo do Reversa. Executa a mesma sequ\u00eancia de agentes do /reversa de ponta a ponta, sem paradas intermedi\u00e1rias, concentrando todas as perguntas em uma entrevista \u00fanica no in\u00edcio. Projetado para sess\u00f5es sem supervis\u00e3o (ex. modo YOLO do Claude Code com permiss\u00f5es autom\u00e1ticas). Use quando o usu\u00e1rio digitar \"/reversa-autonomous\", \"reversa autonomous\", \"reversa aut\u00f4nomo\", \"rodar reversa sem parar\" ou pedir a an\u00e1lise completa sem interrup\u00e7\u00f5es.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-autonomous/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-autonomous"
+        }
+      },
+      {
+        "name": "skill:reversa-clarify",
+        "description": "Gera at\u00e9 cinco perguntas dirigidas para resolver pontos amb\u00edguos do requirements e integra as respostas no documento. Use quando o usu\u00e1rio digitar \"/reversa-clarify\", \"reversa-clarify\", \"esclarecer d\u00favidas\" ou pedir para tirar pontos abertos do requirements antes de planejar. Etapa opcional do ciclo forward, entre `/reversa-requirements` e `/reversa-plan`.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-clarify/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-clarify"
+        }
+      },
+      {
+        "name": "skill:reversa-coding",
+        "description": "Conduz a execu\u00e7\u00e3o do actions.md em c\u00f3digo. Atualiza checkboxes para [X], escreve progress.jsonl, gera legacy-impact.md e regression-watch.md. Funciona ancorado no legado (extra\u00e7\u00e3o do Discovery em `.specs/`) ou em greenfield (prd.md + specs SDD do `/reversa-new`). Use quando o usu\u00e1rio digitar \"/reversa-coding\", \"reversa-coding\", \"executar plano\" ou pedir para come\u00e7ar a codar a feature ativa. \u00daltimo skill do ciclo forward, depois de `/reversa-to-do` (e opcionalmente `/reversa-audit` ou `/reversa-quality`).",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-coding/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-coding"
+        }
+      },
+      {
+        "name": "skill:reversa-consistency-reviewer",
+        "description": "Revisor independente de consist\u00eancia global do Reversa. Procura contradi\u00e7\u00f5es entre units, requisitos, design, tasks, diagramas, OpenAPI, banco, UI e matrizes; valida links e nomenclatura. Produz findings imut\u00e1veis sem alterar documenta\u00e7\u00e3o.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-consistency-reviewer/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-consistency-reviewer"
+        }
+      },
+      {
+        "name": "skill:reversa-coverage-reviewer",
+        "description": "Revisor independente de completude do Reversa. Compara invent\u00e1rio, m\u00f3dulos, rotas, banco, UI, testes e arquivos eleg\u00edveis contra as specs produzidas, encontrando \u00e1reas n\u00e3o documentadas e requisitos sem cobertura. Produz findings imut\u00e1veis e n\u00e3o altera documenta\u00e7\u00e3o.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-coverage-reviewer/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-coverage-reviewer"
+        }
+      },
+      {
+        "name": "skill:reversa-curator",
+        "description": "Segundo agente do Time de Migra\u00e7\u00e3o. Decide o que migra, o que descarta e o que precisa de decis\u00e3o humana, com base nas specs do legado, no crit\u00e9rio do brief e no paradigma escolhido. Produz target_business_rules.md e discard_log.md. Ativa\u00e7\u00e3o: /reversa-curator (geralmente invocado por /reversa-migrate).",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-curator/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-curator"
+        }
+      },
+      {
+        "name": "skill:reversa-data-master",
+        "description": "Documenta completamente o banco de dados do projeto legado \u2014 tabelas, relacionamentos, constraints, triggers, procedures e ERD completo. Use quando DDL, migrations, modelos ORM ou acesso ao banco estiverem dispon\u00edveis.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-data-master/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-data-master"
+        }
+      },
+      {
+        "name": "skill:reversa-debugger",
+        "description": "Registrador de bugs do Reversa. Faz intake, triagem, dedupe, classifica\u00e7\u00e3o, rastreabilidade SPEC\u2194CODE\u2194TEST\u2194BUG e correla\u00e7\u00e3o BUG\u2194BUG, criando a pasta \u00fanica do bug dentro da pasta agregadora do contexto (feature/m\u00f3dulo/caso de uso) em `<bugs_folder>/<contexto>/bugs/`. Nunca corrige. Use quando o usu\u00e1rio digitar \"/reversa-debugger\", \"reversa-debugger\", \"registrar bug\", \"reportar erro\", \"documentar um bug\", ou reclamar de um defeito com frase natural (\"deu pau no sistema de cr\u00e9dito\", \"o carrinho t\u00e1 com problema de c\u00e1lculo\", \"a tela X quebrou\"). Ponto de entrada do Time Reversa Bugs; a corre\u00e7\u00e3o \u00e9 ato separado via `/reversa-debugger-fix`.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-debugger/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-debugger"
+        }
+      },
+      {
+        "name": "skill:reversa-debugger-debate",
+        "description": "Debate multiagente do Time Reversa Bugs, em \u00e9pocas fixas com juiz isolado, para decidir diagn\u00f3stico, estrat\u00e9gia de corre\u00e7\u00e3o ou veredito de spec de um bug registrado. N solvers independentes debatem por R rodadas com snapshot s\u00edncrono; um juiz que n\u00e3o participou sintetiza. Sempre opt-in, com custo estimado antes. Pode incluir outros harness (Codex, Gemini CLI, OpenCode) como debatedores, somente com aceite expl\u00edcito do usu\u00e1rio. Use quando o usu\u00e1rio digitar \"/reversa-debugger-debate\", \"reversa-debugger-debate\", \"abrir debate sobre o bug\", \"debater a corre\u00e7\u00e3o\" ou aceitar a oferta de debate do /reversa-debugger-fix.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-debugger-debate/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-debugger-debate"
+        }
+      },
+      {
+        "name": "skill:reversa-debugger-fix",
+        "description": "Corretor de bugs do Reversa, orquestrador do ciclo de vida do defeito. Reproduz, investiga causa raiz com evid\u00eancias, oferece debate multiagente opt-in, cria testes de reprodu\u00e7\u00e3o e regress\u00e3o, aplica o Correction Change Set com diffs aprovados em dois gates, d\u00e1 o veredito de spec (com adendo versionado quando a spec muda) e fecha conforme a closure policy. Use quando o usu\u00e1rio digitar \"/reversa-debugger-fix\", \"reversa-debugger-fix\", \"corrigir o bug\", \"consertar o BUG-XXX\" ou pedir a corre\u00e7\u00e3o de um bug registrado. Exige bug registrado via `/reversa-debugger`.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-debugger-fix/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-debugger-fix"
+        }
+      },
+      {
+        "name": "skill:reversa-debugger-graph",
+        "description": "Gerador de views do Time Reversa Bugs. Varre os bug.md (source of truth), valida invariantes e regenera as proje\u00e7\u00f5es: \u00edndice por status/phase, cat\u00e1logo compacto, matriz esparsa de rela\u00e7\u00f5es BUG\u2194BUG, grafo mermaid com clusters e impact score, e a matriz de rastreabilidade BUG\u2194SPEC nas duas pontas (incluindo o espelho em `.specs/traceability/bugs.md`). Use quando o usu\u00e1rio digitar \"/reversa-debugger-graph\", \"reversa-debugger-graph\", \"panorama dos bugs\", \"grafo de bugs\", \"regenerar \u00edndice de bugs\" ou pedir a matriz de rastreabilidade de bugs.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-debugger-graph/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-debugger-graph"
+        }
+      },
+      {
+        "name": "skill:reversa-depth-inspection",
+        "description": "Pente-fino do Time Reversa Bugs. Dada uma feature problem\u00e1tica, monta o mapa spec\u2192c\u00f3digo\u2192testes\u2192dados e varre com lentes especializadas (conformidade com spec, fluxo de dados, contratos, estados de erro, cobertura de testes, concorr\u00eancia), em subagentes paralelos quando o harness suportar. S\u00d3 diagnostica: achados confirmados viram bugs registrados com rastreabilidade; nada \u00e9 corrigido. Use quando o usu\u00e1rio digitar \"/reversa-depth-inspection\", \"reversa-depth-inspection\", \"pente-fino na feature\", \"inspe\u00e7\u00e3o profunda\", \"essa feature vive dando problema\" ou pedir varredura completa de uma \u00e1rea problem\u00e1tica.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-depth-inspection/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-depth-inspection"
+        }
+      },
+      {
+        "name": "skill:reversa-design-system",
+        "description": "Extrai e documenta o sistema de design do projeto legado \u2014 paleta de cores, tipografia, espa\u00e7amentos, tokens e componentes a partir de CSS, arquivos de tema e screenshots. Use quando arquivos de estilo ou screenshots de interface estiverem dispon\u00edveis.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-design-system/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-design-system"
+        }
+      },
+      {
+        "name": "skill:reversa-designer",
+        "description": "Quarto agente do Time de Migra\u00e7\u00e3o. Opera em duas fases. Fase 1: detecta a topologia do legado, sempre prop\u00f5e uma topologia moderna alternativa e produz topology_decision.md (com pausa humana para aprova\u00e7\u00e3o). Fase 2: desenha as specs do sistema novo sob a topologia escolhida, produzindo target_architecture.md, target_domain_model.md, target_data_model.md e data_migration_plan.md, com rastreabilidade total para o legado. Ativa\u00e7\u00e3o: /reversa-designer (geralmente invocado por /reversa-migrate).",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-designer/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-designer"
+        }
+      },
+      {
+        "name": "skill:reversa-detective",
+        "description": "Extrai conhecimento de neg\u00f3cio impl\u00edcito do projeto legado \u2014 regras de neg\u00f3cio, ADRs retroativos via Git, m\u00e1quinas de estado e matriz de permiss\u00f5es. Use na fase de interpreta\u00e7\u00e3o de uma an\u00e1lise de engenharia reversa.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-detective/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-detective"
+        }
+      },
+      {
+        "name": "skill:reversa-docs",
+        "description": "Orquestrador do Time Reversa Docs. Gera um mini-site HTML autocontido em <docs_folder>/ com arquitetura 3D, dashboards, gloss\u00e1rio, deck e p\u00e1ginas por feature, a partir do conhecimento j\u00e1 extra\u00eddo pelo core do Reversa. Ative com /reversa-docs, reversa-docs, gerar documenta\u00e7\u00e3o visual, mini-site do projeto, documenta\u00e7\u00e3o interativa.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-docs/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-docs"
+        }
+      },
+      {
+        "name": "skill:reversa-docs-analyst",
+        "description": "Analista do Time Reversa Docs. Produz as p\u00e1ginas de dados quantitativos do mini-site: dashboard de m\u00e9tricas com Highcharts (treemap LOC, barras complexidade, sankey depend\u00eancias, histograma) e timeline interativa de eventos do projeto. Ative com /reversa-docs-analyst, reversa-docs-analyst, regenerar m\u00e9tricas, refazer timeline, dashboard do projeto.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-docs-analyst/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-docs-analyst"
+        }
+      },
+      {
+        "name": "skill:reversa-docs-mapper",
+        "description": "Mapeador do Time Reversa Docs. Produz as p\u00e1ginas de estrutura espacial do mini-site: arquitetura 3D (Code City via Three.js), module map 2D (force-directed via D3), e topologia side-by-side (legado vs moderno vs h\u00edbrido). Ative com /reversa-docs-mapper, reversa-docs-mapper, regenerar arquitetura, refazer mapa de m\u00f3dulos, code city do projeto.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-docs-mapper/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-docs-mapper"
+        }
+      },
+      {
+        "name": "skill:reversa-docs-publisher",
+        "description": "Editor-chefe do Time Reversa Docs. Gera index.html com hero e selo \u00fanico do projeto, injeta mini-selo nas demais p\u00e1ginas, faz auto-discovery de HTMLs auxiliares produzidos por outros agentes do core, valida links e grava telemetria final. Ative com /reversa-docs-publisher, reversa-docs-publisher, regenerar index, refazer selo, atualizar \u00edndice.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-docs-publisher/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-docs-publisher"
+        }
+      },
+      {
+        "name": "skill:reversa-docs-storyteller",
+        "description": "Narrador do Time Reversa Docs. Produz gloss\u00e1rio interativo (Concept Explainer com busca cliente-side), slide deck naveg\u00e1vel (6 a 10 slides) e uma p\u00e1gina detalhada por feature em padr\u00e3o How a Feature Works. Ative com /reversa-docs-storyteller, reversa-docs-storyteller, regenerar gloss\u00e1rio, refazer deck, p\u00e1ginas por feature.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-docs-storyteller/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-docs-storyteller"
+        }
+      },
+      {
+        "name": "skill:reversa-domain-reviewer",
+        "description": "Revisor independente de fidelidade sem\u00e2ntica do Reversa. Reabre c\u00f3digo, testes, banco, configura\u00e7\u00e3o e Git para verificar regras de neg\u00f3cio, estados, permiss\u00f5es, c\u00e1lculos e contratos documentados. Produz findings imut\u00e1veis e n\u00e3o altera specs.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-domain-reviewer/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-domain-reviewer"
+        }
+      },
+      {
+        "name": "skill:reversa-drafter",
+        "description": "Agente Drafter do time Code New Project Agents. Sintetiza `ideation.md` e `personas.md` em um PRD completo (problema, m\u00e9tricas, escopo, n\u00e3o-objetivos, restri\u00e7\u00f5es, riscos). Use quando o usu\u00e1rio digitar \"/reversa-drafter\", \"reversa-drafter\" ou quando invocado pelo orquestrador `/reversa-new`. Produz `.specs/prd.md`.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-drafter/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-drafter"
+        }
+      },
+      {
+        "name": "skill:reversa-especialista-d3",
+        "description": "Engenheiro de Visualiza\u00e7\u00e3o de Dados S\u00eanior especializado em D3.js (v7+). Gera HTML standalone com gr\u00e1ficos D3 (force-directed, hier\u00e1rquicos, sankey, treemap). Use quando o usu\u00e1rio pedir \"module map\", \"force-directed\", \"dependency graph 2D\", \"tree\", \"sankey\", ou visualiza\u00e7\u00e3o 2D de rela\u00e7\u00f5es.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-especialista-d3/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-especialista-d3"
+        }
+      },
+      {
+        "name": "skill:reversa-evidence-auditor",
+        "description": "Audita de forma independente a evid\u00eancia da documenta\u00e7\u00e3o Reversa. Valida Claim IDs, Evidence IDs, paths, linhas, hashes, cobertura e classifica\u00e7\u00f5es de confian\u00e7a; produz findings imut\u00e1veis e nunca altera specs. Use pelo runner unattended antes e depois da adjudica\u00e7\u00e3o, ou quando o usu\u00e1rio pedir auditoria de evid\u00eancias.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-evidence-auditor/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-evidence-auditor"
+        }
+      },
+      {
+        "name": "skill:reversa-extract-soul",
+        "description": "Extrai a alma do projeto legado em uma \u00fanica Spec s\u00edntese (soul.md), reunindo prop\u00f3sito, entidades centrais e decis\u00f5es fundadoras. Roda logo ap\u00f3s o Scout, \u00e9 leve e n\u00e3o substitui Archaeologist/Detective. Ative com /reversa-extract-soul, reversa-extract-soul, extrair alma, soul of the project, ess\u00eancia do sistema.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-extract-soul/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-extract-soul"
+        }
+      },
+      {
+        "name": "skill:reversa-forward",
+        "description": "Orquestrador do pipeline de evolu\u00e7\u00e3o do Reversa. Detecta o est\u00e1gio f\u00edsico da feature ativa em `<forward_folder>/` e sugere o pr\u00f3ximo agente do ciclo forward (requirements, clarify, plan, to-do, audit, quality, coding, sync). Use quando o usu\u00e1rio digitar \"/reversa-forward\", \"reversa-forward\", \"iniciar evolu\u00e7\u00e3o\", \"iniciar pipeline forward\" ou pedir para conduzir o ciclo de uma feature do zero ao c\u00f3digo. N\u00e3o escreve artefatos de feature por conta pr\u00f3pria, apenas roteia.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-forward/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-forward"
+        }
+      },
+      {
+        "name": "skill:reversa-highcharts-visualizer",
+        "description": "Cria visualiza\u00e7\u00f5es de dados interativas e profissionais usando Highcharts.js, gerando HTML standalone com gr\u00e1ficos animados, responsivos e acess\u00edveis. Use este skill sempre que o usu\u00e1rio pedir para criar gr\u00e1ficos, charts, dashboards, visualiza\u00e7\u00f5es de dados, ou qualquer representa\u00e7\u00e3o visual de dados num\u00e9ricos/categ\u00f3ricos. Deve ser usado quando o usu\u00e1rio mencionar termos como \"gr\u00e1fico\", \"chart\", \"dashboard\", \"highcharts\", \"visualiza\u00e7\u00e3o de dados\", \"gr\u00e1fico de linhas\", \"barras\", \"pizza\", \"scatter\", \"heatmap\", \"treemap\", \"gauge\", \"stock chart\", \"mapa\", \"gantt\", \"sankey\", \"funnel\", ou quando fornecer dados (CSV, JSON, tabela, planilha) pedindo representa\u00e7\u00e3o visual. Tamb\u00e9m deve ser ativado quando o usu\u00e1rio pedir gr\u00e1ficos bonitos, interativos, animados, com tooltip, drill-down, ou export\u00e1veis. Funciona com dados inline, CSV, JSON, e arquivos de dados. Sempre gera HTML standalone completo e funcional.\n",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-highcharts-visualizer/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-highcharts-visualizer"
+        }
+      },
+      {
+        "name": "skill:reversa-ideator",
+        "description": "Agente Ideator do time Code New Project Agents. Conduz brainstorm estruturado a partir de um brief inicial, com 6 perguntas divergentes (problema raiz, valor, alternativas, p\u00fablico-alvo bruto, m\u00e9tricas de sucesso, premissas perigosas). Use quando o usu\u00e1rio digitar \"/reversa-ideator\", \"reversa-ideator\" ou quando invocado pelo orquestrador `/reversa-new`. Produz `.specs/ideation.md`.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-ideator/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-ideator"
+        }
+      },
+      {
+        "name": "skill:reversa-image-prompt-json",
+        "description": "Cria prompts JSON estruturados para gera\u00e7\u00e3o de imagens de alta qualidade com est\u00e9tica luxuosa e cinematogr\u00e1fica. Use esta skill sempre que o usu\u00e1rio quiser gerar um prompt de imagem, criar uma foto de produto, montar um prompt para IA de imagem, fotografar produto virtualmente, criar imagem de comida, bebida, cosm\u00e9tico, joia, moda ou qualquer item visual. Tamb\u00e9m deve ser ativada quando o usu\u00e1rio mencionar: \"prompt para imagem\", \"gerar imagem de produto\", \"foto de produto com IA\", \"prompt para Midjourney/DALL-E/Flux\", \"fotografar produto\", ou pedir para \"montar um prompt JSON de imagem\".\n",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-image-prompt-json/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-image-prompt-json"
+        }
+      },
+      {
+        "name": "skill:reversa-inspector",
+        "description": "Quinto agente do Time de Migra\u00e7\u00e3o. Define como provar que o sistema novo \u00e9 comportamentalmente equivalente ao legado, com crit\u00e9rios adaptados ao paradigma escolhido. Produz parity_specs.md e parity_tests/*.feature em Gherkin. Ativa\u00e7\u00e3o: /reversa-inspector (geralmente invocado por /reversa-migrate).",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-inspector/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-inspector"
+        }
+      },
+      {
+        "name": "skill:reversa-migrate",
+        "description": "Orquestrador do Time de Migra\u00e7\u00e3o do Reversa. Conduz o pipeline de migra\u00e7\u00e3o ap\u00f3s o `/reversa` ter populado o .specs/. Coleta brief, invoca os 6 agentes (Paradigm Advisor \u2192 Curator \u2192 Strategist \u2192 Designer \u2192 Screen Translator \u2192 Inspector) com pausas humanas, e gera handoff.md final. Use quando o usu\u00e1rio digitar `/reversa-migrate`, `reversa-migrate`, `migrar sistema`, `iniciar migra\u00e7\u00e3o`.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-migrate/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-migrate"
+        }
+      },
+      {
+        "name": "skill:reversa-n8n",
+        "description": "Gera specs SDD (workflow-overview, requirements, design) a partir de workflows do N8N exportados em JSON, preparando o terreno para reimplementa\u00e7\u00e3o em Python ou outra linguagem. Use quando o usu\u00e1rio tiver um arquivo JSON exportado do N8N e quiser document\u00e1-lo como spec ou portar para c\u00f3digo.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-n8n/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-n8n"
+        }
+      },
+      {
+        "name": "skill:reversa-new",
+        "description": "Orquestrador do time Code New Project Agents do Reversa. Conduz o pipeline greenfield, partindo de uma ideia em linguagem natural e produzindo brainstorm, personas, PRD e specs SDD em `.specs/`. Tem dois modos: guiado (passo a passo com CONTINUAR, termina nas specs) e expresso (entrevista \u00fanica no in\u00edcio e execu\u00e7\u00e3o de ponta a ponta, emendando no ciclo forward at\u00e9 o c\u00f3digo). Use quando o usu\u00e1rio digitar \"/reversa-new\", \"/reversa-new expresso\", \"reversa-new\", \"come\u00e7ar projeto novo\", \"criar projeto do zero\", \"da ideia ao c\u00f3digo\" ou pedir para iniciar um produto greenfield.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-new/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-new"
+        }
+      },
+      {
+        "name": "skill:reversa-paradigm-advisor",
+        "description": "Primeiro agente do Time de Migra\u00e7\u00e3o. Detecta o paradigma do sistema legado a partir das specs, infere o paradigma natural da stack alvo, alerta sobre gaps e for\u00e7a uma decis\u00e3o consciente do usu\u00e1rio. Produz paradigm_decision.md, leitura obrigat\u00f3ria de todos os agentes posteriores. Ativa\u00e7\u00e3o: /reversa-paradigm-advisor (geralmente invocado por /reversa-migrate).",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-paradigm-advisor/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-paradigm-advisor"
+        }
+      },
+      {
+        "name": "skill:reversa-plan",
+        "description": "Esbo\u00e7a a abordagem t\u00e9cnica como delta sobre o legado, gerando roadmap, investigation, data-delta, onboarding e interfaces da feature ativa. Use quando o usu\u00e1rio digitar \"/reversa-plan\", \"reversa-plan\", \"esbo\u00e7ar plano t\u00e9cnico\" ou pedir para virar requirements em desenho de solu\u00e7\u00e3o. Terceiro skill do ciclo forward, depois de `/reversa-requirements` e (opcionalmente) `/reversa-clarify`.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-plan/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-plan"
+        }
+      },
+      {
+        "name": "skill:reversa-pricing-estimate",
+        "description": "Combina profile de cobranca e size da feature ativa para produzir tres cenarios de preco lado a lado: Esforco, Valor e Faixa de Mercado. Use quando o usuario digitar \"/reversa-pricing-estimate\", \"reversa-pricing-estimate\", \"calcular preco\", \"quanto cobrar\" ou \"orcar feature\". Roda depois de `/reversa-pricing-profile` e `/reversa-pricing-size`.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-pricing-estimate/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-pricing-estimate"
+        }
+      },
+      {
+        "name": "skill:reversa-pricing-profile",
+        "description": "Conduz uma entrevista guiada de ate dez perguntas e gera o perfil de cobranca do usuario, com pais, moeda, senioridade normalizada, taxa hora, markup de projeto, regime tributario, modelo de cobranca e perfil de cliente. Use quando o usuario digitar \"/reversa-pricing-profile\", \"reversa-pricing-profile\", \"configurar perfil de cobranca\", \"definir taxa hora\" ou pedir para configurar precificacao no Reversa.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-pricing-profile/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-pricing-profile"
+        }
+      },
+      {
+        "name": "skill:reversa-pricing-size",
+        "description": "Mede o tamanho estrutural da feature ativa lendo requirements, duvidas, plan e tasks do ciclo forward, e gera size.json mais size.md com T-shirt sizing deterministico baseado em tasks e ajuste de risco. Use quando o usuario digitar \"/reversa-pricing-size\", \"reversa-pricing-size\", \"dimensionar feature\" ou \"calcular tamanho da feature\". Roda depois de `/reversa-to-do` e antes de `/reversa-pricing-estimate`.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-pricing-size/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-pricing-size"
+        }
+      },
+      {
+        "name": "skill:reversa-principles",
+        "description": "Cria ou atualiza os princ\u00edpios duradouros do projeto e propaga sugest\u00f5es de ajuste nos templates dependentes. Princ\u00edpios s\u00e3o raros, mudam pouco e influenciam todos os artefatos. Use quando o usu\u00e1rio digitar \"/reversa-principles\", \"reversa-principles\", \"definir princ\u00edpios\" ou pedir para criar/alterar/aposentar um princ\u00edpio do projeto. Pode rodar antes mesmo da primeira feature.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-principles/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-principles"
+        }
+      },
+      {
+        "name": "skill:reversa-quality",
+        "description": "Auditoria de clareza textual do requirements. Verifica se a prosa \u00e9 boa o bastante para gerar plano sem ambiguidade. N\u00c3O mistura com auditoria de testes de implementa\u00e7\u00e3o. Use quando o usu\u00e1rio digitar \"/reversa-quality\", \"reversa-quality\" ou pedir para revisar a qualidade do requirements antes de planejar. Etapa opcional do ciclo forward.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-quality/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-quality"
+        }
+      },
+      {
+        "name": "skill:reversa-reconstructor",
+        "description": "Gera um plano de reconstru\u00e7\u00e3o bottom-up a partir das specs do Reversa e executa cada tarefa sob demanda, uma por vez, preservando tokens. Use quando quiser reimplementar o software do zero a partir das especifica\u00e7\u00f5es geradas. Ativa\u00e7\u00e3o: /reversa-reconstructor",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-reconstructor/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-reconstructor"
+        }
+      },
+      {
+        "name": "skill:reversa-requirements",
+        "description": "Transforma uma ideia em linguagem natural num documento de requisitos completo, ancorado nos artefatos da pipeline reversa. Use quando o usu\u00e1rio digitar \"/reversa-requirements\", \"reversa-requirements\", \"quero levantar requisitos\" ou pedir para iniciar uma nova feature a partir de uma frase. Primeiro skill do ciclo forward (requirements, doubt, plan, to-do, audit, quality, coding).",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-requirements/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-requirements"
+        }
+      },
+      {
+        "name": "skill:reversa-researcher",
+        "description": "Agente Researcher do time Code New Project Agents. A partir de `ideation.md`, aprofunda o p\u00fablico-alvo em 1 a 3 personas estruturadas com jornadas. Use quando o usu\u00e1rio digitar \"/reversa-researcher\", \"reversa-researcher\" ou quando invocado pelo orquestrador `/reversa-new`. Produz `.specs/personas.md`.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-researcher/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-researcher"
+        }
+      },
+      {
+        "name": "skill:reversa-resume",
+        "description": "Retoma uma feature pausada (listada em paused-features de active-requirements.json) e a torna ativa. Use quando o usu\u00e1rio digitar \"/reversa-resume\", \"reversa-resume\", \"retomar feature pausada\" ou pedir para voltar a uma feature anterior. N\u00c3O cria features novas, apenas troca a ativa pela escolhida e (quando faz sentido) move a ativa atual para paused-features.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-resume/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-resume"
+        }
+      },
+      {
+        "name": "skill:reversa-reviewer",
+        "description": "Revisa criticamente as especifica\u00e7\u00f5es geradas pelo Reversa e produz findings imut\u00e1veis. Em modo unattended roda em passagem estrutural ou adversarial, sem alterar specs; o Adjudicator decide e aplica corre\u00e7\u00f5es. No modo guiado pode gerar perguntas, mas nunca autocorrige a documenta\u00e7\u00e3o revisada.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-reviewer/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-reviewer"
+        }
+      },
+      {
+        "name": "skill:reversa-scout",
+        "description": "Mapeia a superf\u00edcie do projeto legado \u2014 estrutura de pastas, linguagens, frameworks, depend\u00eancias e entry points. Use no in\u00edcio de uma an\u00e1lise de engenharia reversa para criar o invent\u00e1rio inicial do projeto.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-scout/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-scout"
+        }
+      },
+      {
+        "name": "skill:reversa-screen-translator",
+        "description": "Quinto agente do Time de Migra\u00e7\u00e3o. Traduz as telas do sistema legado em especifica\u00e7\u00f5es execut\u00e1veis, fechando a lacuna entre o cat\u00e1logo do design-system e o c\u00f3digo pronto. Opera em duas fases. Fase 1: detecta plataforma origem/alvo, apresenta os modos (literal, modernizado, h\u00edbrido) e exige decis\u00e3o humana, produzindo screen_modernization_decision.md. Fase 2: gera target_screens.md, screen_deviation_log.md e, quando o or\u00e1culo legado roda, golden files com manifest.yaml para o Inspector consumir. Ativa\u00e7\u00e3o: /reversa-screen-translator (geralmente invocado por /reversa-migrate, entre Designer e Inspector).",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-screen-translator/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-screen-translator"
+        }
+      },
+      {
+        "name": "skill:reversa-selo-generativo",
+        "description": "Cria selos visuais generativos seeded usando p5.js, gerando HTML standalone com canvas de arte algor\u00edtmica reprodut\u00edvel. Use esta skill sempre que o usu\u00e1rio pedir um selo, identidade visual de projeto, hero generativo, capa \u00fanica reprodut\u00edvel, ou artwork derivado de um hash. Deve ser ativada quando o usu\u00e1rio mencionar termos como \"selo\", \"selo generativo\", \"identidade visual do projeto\", \"hero capa\", \"artwork seeded\", \"Art Blocks style\", \"p5.js generativo\", \"capa reprodut\u00edvel\", \"selo de documenta\u00e7\u00e3o\" ou pedir um elemento decorativo \u00fanico e reprodut\u00edvel derivado de uma string. Funciona com qualquer string como seed (hash do soul.md, nome do projeto, ID arbitr\u00e1rio). Sempre gera HTML standalone com p5.js via CDN.\n",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-selo-generativo/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-selo-generativo"
+        }
+      },
+      {
+        "name": "skill:reversa-spec-sdd",
+        "description": "Agente final do time Code New Project Agents do Reversa. Decomp\u00f5e um PRD em componentes l\u00f3gicos e gera specs SDD (Spec-Driven Development) por componente, com score autom\u00e1tico de qualidade. Use quando o usu\u00e1rio digitar \"/reversa-spec-sdd\", \"reversa-spec-sdd\" ou quando invocado pelo orquestrador `/reversa-new`. L\u00ea `.specs/prd.md` e produz `.specs/sdd/<componente>.md`. Ao concluir, faz handoff para `/reversa-forward`. Tamb\u00e9m pode ser usado avulso para avaliar uma spec existente (modo de avalia\u00e7\u00e3o) ou para gerar spec \u00fanica a partir de qualquer entrada que o usu\u00e1rio forne\u00e7a. Entrega: arquivos `.md` no formato SDD com score de qualidade (0 a 100) e an\u00e1lise de gaps.\n",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-spec-sdd/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-spec-sdd"
+        }
+      },
+      {
+        "name": "skill:reversa-strategist",
+        "description": "Terceiro agente do Time de Migra\u00e7\u00e3o. Prop\u00f5e estrat\u00e9gias de migra\u00e7\u00e3o com trade-offs expl\u00edcitos, considerando brief, paradigma e apetite. Recomenda uma estrat\u00e9gia mas deixa a escolha como decis\u00e3o humana. Produz migration_strategy.md, risk_register.md e cutover_plan.md. Ativa\u00e7\u00e3o: /reversa-strategist (geralmente invocado por /reversa-migrate).",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-strategist/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-strategist"
+        }
+      },
+      {
+        "name": "skill:reversa-sync",
+        "description": "Converg\u00eancia p\u00f3s-coding do Reversa. Destila a feature entregue (requirements, legacy-impact, regression-watch) em um adendo dentro de `.specs/addenda/`, mantendo a extra\u00e7\u00e3o reversa representativa do sistema entre re-extra\u00e7\u00f5es, sem tocar nos artefatos originais. Use quando o usu\u00e1rio digitar \"/reversa-sync\", \"reversa-sync\", \"sincronizar specs\", \"converger a feature na extra\u00e7\u00e3o\" ou pedir para atualizar a extra\u00e7\u00e3o com a feature rec\u00e9m-codada. Passo opcional do ciclo forward, depois de `/reversa-coding`.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-sync/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-sync"
+        }
+      },
+      {
+        "name": "skill:reversa-to-do",
+        "description": "Decomp\u00f5e o roadmap em a\u00e7\u00f5es at\u00f4micas com IDs sequenciais, depend\u00eancias e marcador de paralelismo. Use quando o usu\u00e1rio digitar \"/reversa-to-do\", \"reversa-to-do\", \"decompor em tarefas\" ou pedir para virar o roadmap em uma lista execut\u00e1vel. Quarto skill do ciclo forward, depois de `/reversa-plan`.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-to-do/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-to-do"
+        }
+      },
+      {
+        "name": "skill:reversa-visor",
+        "description": "Documenta a interface do sistema legado a partir de screenshots \u2014 extrai componentes, layouts, fluxos de navega\u00e7\u00e3o e estados de tela. Use quando screenshots do sistema estiverem dispon\u00edveis, sem necessidade de o sistema estar em execu\u00e7\u00e3o.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-visor/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-visor"
+        }
+      },
+      {
+        "name": "skill:reversa-writer",
+        "description": "Gera especifica\u00e7\u00f5es execut\u00e1veis do sistema legado como contratos operacionais, em formato de pasta-por-unit com requirements.md, design.md e tasks.md. Use na fase de gera\u00e7\u00e3o de uma an\u00e1lise de engenharia reversa.",
+        "source": "skill",
+        "sourceInfo": {
+          "path": "/home/_user/dev/pi-reversa/packaged-skills/reversa-writer/SKILL.md",
+          "source": "local",
+          "scope": "temporary",
+          "origin": "top-level",
+          "baseDir": "/home/_user/dev/pi-reversa/packaged-skills/reversa-writer"
+        }
+      }
+    ]
+  }
+}

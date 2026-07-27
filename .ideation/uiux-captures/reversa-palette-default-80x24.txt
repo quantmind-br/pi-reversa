@@ -1,0 +1,24 @@
+
+ Warning: No models available. Use /login to log into a provider via OAuth or
+ API key. See:
+
+ /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/p
+ roviders.md
+
+ /home/_user/dev/pi-reversa/node_modules/@earendil-works/pi-coding-agent/docs/m
+ odels.md
+
+────────────────────────────────────────────────────────────────────────────────
+/reversa
+────────────────────────────────────────────────────────────────────────────────
+→ reversa                         [t] Ponto de entrada principal do Reversa. O
+  reversa-cbm                     [t] Status/refresh/enable/disable do code in
+  reversa-adjudicator             [t] Adjudica findings independentes do Rever
+  reversa-agents-help             [t] Explica com analogias o que cada agente
+  reversa-archaeologist           [t] Analisa profundamente o código do projet
+  (1/124)
+~/dev/pi-reversa (main)
+0.0%/0 (auto)                                                            unknown
+
+
+
